@@ -9,32 +9,21 @@
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         #map { position: absolute; top: 35px; bottom: 46px; left: 0; right: 0; z-index: 1; background: #000; cursor: crosshair; }
-        
-        /* Access Gate */
         #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
         .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
-
-        /* Ticker HUD */
         #news-bulletin-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; }
         .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; position: relative; white-space: nowrap; border-right: 1px solid white; }
         .news-ticker-move { white-space: nowrap; animation: ticker-news 90s linear infinite; display: flex; }
         .news-item { margin-right: 50px; text-decoration: none; color: inherit; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-        /* Actions */
         #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
         .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
-
-        /* Tactical Pins */
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 30px; height: 30px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; white-space: nowrap; text-transform: uppercase; }
         .intel-link { display: block; background: #eee; color: #000 !important; font-size: 10px; padding: 8px; margin-top: 5px; text-align: center; font-weight: bold; text-decoration: none; border-radius: 3px; border-left: 4px solid #ef4444; }
-
-        /* User Location "I'M HERE" */
         .user-pulse { width: 15px; height: 15px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; animation: pulse-anim 2s infinite; }
         @keyframes pulse-anim { 0% { transform: scale(0.95); opacity: 1; } 70% { transform: scale(1.4); opacity: 0.4; } 100% { transform: scale(0.95); opacity: 1; } }
-
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 300px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 6000; transition: 0.4s; padding: 20px; overflow-y: auto; }
         #briefcase-sidebar.open { right: 0; }
         .case-entry { background: #111; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 11px; }
@@ -100,7 +89,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const JERUSALEM = [31.7683, 35.2137];
-        // YOUR LIVE DISCORD WEBHOOK
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1482741387534274581/_28vC-BnDqL8_AFeGLnUaAGZ8brAgVyjJQuvF5oNXJvp66CCSdI-B2CKVlY1BeG82tlh";
 
         const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(JERUSALEM, 3);
@@ -120,7 +108,7 @@
                 gate.style.opacity = '0';
                 setTimeout(() => { 
                     gate.style.display = 'none'; 
-                    map.invalidateSize();
+                    map.invalidateSize(); 
                     fetchLiveNews();
                     loadBriefcase();
                 }, 800);
@@ -145,17 +133,32 @@
                 navigator.share({ title: 'JSI Tactical', text: msg }).catch(() => copyFallback(msg));
             } else { copyFallback(msg); }
         }
+
         function copyFallback(text) {
             navigator.clipboard.writeText(text);
             alert("Tactical Briefing Copied to Clipboard.");
         }
 
-        function locateUser() { map.locate({setView: true, maxZoom: 14}); }
+        // --- ENHANCED UPLINK LOGIC ---
+        function locateUser() {
+            // Explicit user interaction trigger
+            map.locate({
+                setView: true, 
+                maxZoom: 14,
+                enableHighAccuracy: true,
+                timeout: 10000
+            });
+        }
+
         map.on('locationfound', function(e) {
             if (userMarker) map.removeLayer(userMarker);
             const userIcon = L.divIcon({ className: 'user-pulse', iconSize: [15, 15] });
             userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map);
-            userMarker.bindPopup("<b style='color:#3b82f6;'>I'M HERE</b>").openPopup();
+            userMarker.bindPopup("<b style='color:#3b82f6;'>UPLINK ESTABLISHED</b>").openPopup();
+        });
+
+        map.on('locationerror', function(e) { 
+            alert(`UPLINK FAILED: ${e.message}\n\n1. Ensure site is HTTPS.\n2. Enable Location in Browser Settings.`); 
         });
 
         map.on('click', async function(e) {
@@ -179,7 +182,6 @@
             const lon = tappedCoords.lng;
             const finalName = (userLabel || tappedAddress).toUpperCase();
 
-            // DISCORD TRANSMISSION
             fetch(DISCORD_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
