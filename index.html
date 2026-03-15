@@ -4,33 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JSI | War Room Command</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; cursor: crosshair; }
+        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; }
         .blurred { filter: blur(8px); pointer-events: none; }
 
         /* Overlays */
-        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; backdrop-filter: blur(5px); pointer-events: none; }
+        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; pointer-events: none; }
         #personnel-count { position: absolute; top: 15px; right: 20px; z-index: 1002; background: rgba(11, 14, 20, 0.8); border: 1px solid #374151; padding: 5px 12px; border-radius: 4px; font-size: 10px; color: #10b981; font-weight: bold; }
 
-        .sidebar { position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000; background: rgba(11, 14, 20, 0.9); border: 1px solid #374151; padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
+        .sidebar { position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000; background: rgba(11, 14, 20, 0.9); border: 1px solid #374151; padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; transition: transform 0.4s; }
         .sidebar.minimized { transform: translateX(-360px); opacity: 0; pointer-events: none; }
-        .menu-toggle { position: absolute; top: 40px; left: 20px; z-index: 1001; background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 1px solid #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        .menu-toggle { position: absolute; top: 40px; left: 20px; z-index: 1001; background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 1px solid #fff; }
 
         .section-label { font-size: 9px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; margin-top: 15px; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 8px; border: 1px solid #4b5563; border-radius: 4px; font-size: 11px; margin-bottom: 8px; outline: none; }
         .action-btn { background: #1f2937; color: white; width: 100%; padding: 10px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-size: 10px; }
         .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; margin-top: 10px; }
         
-        /* Lists */
         .history-list { font-size: 10px; color: #9ca3af; margin-top: 5px; max-height: 100px; overflow-y: auto; border-left: 1px solid #ef4444; padding-left: 8px; }
         .history-item { cursor: pointer; padding: 4px 0; border-bottom: 1px solid #1f2937; }
-        .history-item:hover { color: #ef4444; }
 
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
@@ -38,6 +33,7 @@
 
         .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
@@ -79,15 +75,7 @@
             <option value="plasma">Plasma (High Contrast)</option>
             <option value="monochrome">Ghost (White/Grey)</option>
         </select>
-        <button class="action-btn" onclick="toggleHeatmap()">🔥 Toggle Heatmap</button>
-
-        <span class="section-label">Field Manual</span>
-        <button class="action-btn" onclick="toggleHelp()">📖 Training & Manual</button>
-        <div id="help-box" style="display:none; font-size: 10px; color: #9ca3af; padding: 5px;">
-            * Click history items to revisit sectors.<br>
-            * Field reports drop at map center.<br>
-            * Audio pings on every threat update.
-        </div>
+        <button class="action-btn" id="heat-toggle-btn" onclick="toggleHeatmap()">🔥 Toggle Heatmap: OFF</button>
 
         <span class="section-label">Settings</span>
         <button class="action-btn" id="audio-toggle" onclick="toggleAudio()">🔊 Audio: ON</button>
@@ -103,11 +91,11 @@
     <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     <script>
         const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
-        const tacticalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let heatLayer = null, heatData = [], audioEnabled = true;
         const gradients = {
-            standard: {0.4: 'blue', 0.65: 'lime', 1: 'red'},
+            standard: {0.4: 'blue', 0.6: 'lime', 1: 'red'},
             plasma: {0.2: 'purple', 0.5: 'orange', 1: 'yellow'},
             monochrome: {0.3: 'grey', 0.7: 'silver', 1: 'white'}
         };
@@ -118,11 +106,6 @@
         }
         setInterval(updatePersonnelCount, 5000);
 
-        function toggleHelp() {
-            const hb = document.getElementById('help-box');
-            hb.style.display = hb.style.display === 'block' ? 'none' : 'block';
-        }
-
         function updateHeatmapStyle() {
             if (heatLayer) {
                 const style = document.getElementById('heat-palette').value;
@@ -131,10 +114,16 @@
         }
 
         function toggleHeatmap() {
-            if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
-            else { 
+            const btn = document.getElementById('heat-toggle-btn');
+            if (heatLayer) {
+                map.removeLayer(heatLayer);
+                heatLayer = null;
+                btn.innerText = "🔥 Toggle Heatmap: OFF";
+            } else {
                 const style = document.getElementById('heat-palette').value;
-                heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, gradient: gradients[style]}).addTo(map); 
+                // Added higher radius (40) and lower blur (20) to make "heat" visible even with single pins
+                heatLayer = L.heatLayer(heatData, {radius: 40, blur: 20, max: 1.0, gradient: gradients[style]}).addTo(map);
+                btn.innerText = "🔥 Toggle Heatmap: ON";
             }
         }
 
@@ -153,10 +142,10 @@
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}`)
                     .then(res => res.json()).then(data => {
                         if (data.length > 0) {
-                            const lat = data[0].lat, lon = data[0].lon, name = e.target.value.toUpperCase();
+                            const lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
                             map.flyTo([lat, lon], 12);
-                            addPin(lat, lon, name, Math.floor(Math.random() * 30) + 65, false);
-                            addToHistory(name, lat, lon);
+                            addPin(lat, lon, e.target.value.toUpperCase(), Math.floor(Math.random() * 30) + 65, false);
+                            addToHistory(e.target.value.toUpperCase(), lat, lon);
                         }
                     });
             }
@@ -182,15 +171,20 @@
         function addPin(lat, lon, name, risk, isManual) {
             const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${isManual?'!':risk+'%'}</span>`, iconSize: [35, 35] });
             L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
-            heatData.push([lat, lon, risk / 100]);
-            if (heatLayer) heatLayer.setLatLngs(heatData);
+            
+            // Critical: Lat/Lon must be numbers for the Heat Layer to read them correctly
+            heatData.push([parseFloat(lat), parseFloat(lon), risk / 100]);
+            
+            if (heatLayer) {
+                heatLayer.setLatLngs(heatData);
+                heatLayer.redraw();
+            }
             playRadarPing();
         }
 
         function logFieldReport() {
             const c = map.getCenter();
             addPin(c.lat, c.lng, `FIELD REPORT (${document.getElementById('threat-type').value})`, 85, true);
-            addToHistory(`REPORT @ ${c.lat.toFixed(2)}`, c.lat, c.lng);
         }
 
         function toggleSidebar(e) {
@@ -210,6 +204,7 @@
             document.getElementById('disclaimer-overlay').style.display = 'none';
             document.getElementById('map').classList.remove('blurred');
             if (audioCtx.state === 'suspended') audioCtx.resume();
+            runAutoScan();
         }
 
         async function updateFeed() {
@@ -222,6 +217,12 @@
         }
 
         function triggerPanic() { window.location.href = `sms:911?&body=JSI EMERGENCY: ${window.location.href}`; }
+
+        function runAutoScan() {
+            const zones = [{ name: "New York", coords: [40.7128, -74.0060] }, { name: "Los Angeles", coords: [34.0522, -118.2437] }, { name: "London", coords: [51.5074, -0.1278] }, { name: "Paris", coords: [48.8566, 2.3522] }];
+            zones.forEach((z, i) => setTimeout(() => addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), 75, false), i * 1000));
+        }
+
         updateFeed(); setInterval(updateFeed, 300000);
     </script>
 </body>
