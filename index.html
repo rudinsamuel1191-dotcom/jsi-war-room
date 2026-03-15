@@ -19,29 +19,34 @@
         /* Tactical Briefcase Sidebar */
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 320px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 9600; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 25px; box-shadow: -15px 0 40px rgba(0,0,0,0.9); }
         #briefcase-sidebar.open { right: 0; }
-        .briefcase-item { background: #111; padding: 15px; border-radius: 6px; border: 1px solid #222; border-left: 4px solid #ef4444; margin-bottom: 12px; position: relative; }
-        .delete-intel { position: absolute; top: 10px; right: 10px; color: #444; font-size: 10px; cursor: pointer; }
-
+        .briefcase-item { background: #111; padding: 15px; border-radius: 6px; border: 1px solid #222; border-left: 4px solid #ef4444; margin-bottom: 12px; }
+        
         /* HUD & Menu */
         #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
         .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; }
         #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        
         .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-align: center; line-height: 1.1; }
-        
+
+        /* Market Ticker */
+        #market-ticker-wrap { width: 100%; height: 40px; background: #000; border-top: 1px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
+        .ticker-move { white-space: nowrap; animation: ticker 60s linear infinite; color: #fff; font-family: monospace; font-size: 13px; letter-spacing: 1px; }
+        .m-up { color: #10b981; font-weight: bold; }
+        .m-down { color: #ef4444; font-weight: bold; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
         /* Report Modal */
         #report-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 9500; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
         .modal-card { background: #0a0a0a; border: 1px solid #333; width: 100%; max-width: 420px; padding: 25px; border-radius: 8px; border-top: 5px solid #ef4444; }
         .modal-select { background: #1a1a1a; border: 1px solid #444; color: white; width: 100%; padding: 14px; margin-top: 8px; border-radius: 6px; outline: none; font-size: 14px; }
 
-        /* Pins */
+        /* Popup Styles */
+        .live-link-btn { display: block; background: #1a1a1a; border: 1px solid #333; color: #ef4444; font-size: 10px; padding: 8px; border-radius: 4px; margin-bottom: 6px; text-decoration: none; font-weight: bold; text-align: center; }
+        .live-link-btn:hover { background: #ef4444; color: white; }
+        
         .tactical-marker { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 34px; height: 34px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-percentage { transform: rotate(45deg); font-size: 10px; font-weight: 900; color: white; }
         .pin-label { background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; text-transform: uppercase; }
-
-        .intel-feed { max-height: 180px; overflow-y: auto; margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
-        .intel-item { font-size: 11px; margin-bottom: 10px; border-left: 3px solid #ef4444; padding-left: 10px; color: #333; }
     </style>
 </head>
 <body>
@@ -54,12 +59,10 @@
         <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
             <div>
                 <h2 class="text-red-500 font-black text-xs tracking-[0.2em]">OPERATOR BRIEFCASE</h2>
-                <p class="text-[8px] text-zinc-600 uppercase">Encrypted Local Storage</p>
             </div>
             <button onclick="toggleBriefcase()" class="text-zinc-500 text-xl font-bold">×</button>
         </div>
         <div id="briefcase-content" class="space-y-4"></div>
-        <button onclick="clearAllIntel()" class="w-full mt-6 py-2 border border-zinc-800 text-zinc-600 text-[9px] font-bold uppercase hover:bg-red-900 hover:text-white transition">Clear All Files</button>
     </div>
 
     <div id="report-modal">
@@ -74,7 +77,7 @@
                     <option value="50">🔥 ARSON / ATTACK</option>
                     <option value="45">🚀 ROCKET STRIKE</option>
                 </select>
-                <input type="text" id="report-evidence" placeholder="Paste Proof Link" class="modal-select bg-black">
+                <input type="text" id="report-evidence" placeholder="Paste Link (Optional)" class="modal-select bg-black">
             </div>
             <div class="flex gap-3 mt-8">
                 <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-4 rounded-lg font-bold text-[11px] uppercase tracking-widest">Abort</button>
@@ -86,7 +89,7 @@
     <div id="map-container">
         <div id="hud-top">
             <div class="hud-card">
-                <div style="font-size: 8px; color: #9ca3af;">UPLINK ACTIVE</div>
+                <div style="font-size: 8px; color: #9ca3af;">OPS ONLINE</div>
                 <div style="color: #10b981; font-weight: 900; font-size: 20px;"><span id="user-count">6,412</span></div>
             </div>
             <div class="hud-card">
@@ -97,10 +100,24 @@
         <div id="action-menu">
             <div class="action-btn" onclick="openReport()"><span>📡</span>REPORT<br>INTEL</div>
             <div class="action-btn" style="background:#1f2937; border-color:#9ca3af;" onclick="toggleBriefcase()"><span>💼</span>BRIEF<br>CASE</div>
-            <button class="action-btn" style="background:#1e3a8a; border-color:#3b82f6;" onclick="recenterMap()"><span>📍</span>HOME</button>
+            <div class="action-btn" style="background:#000; border-color:#ef4444;" onclick="alert('FEEDBACK: contact@jsi-intel.com')"><span>💬</span>FEED<br>BACK</div>
             <button class="action-btn" style="background:#7c3aed; border-color:#a78bfa;" onclick="shareSite()"><span>🔗</span>SHARE</button>
         </div>
         <div id="map"></div>
+    </div>
+
+    <div id="market-ticker-wrap">
+        <div class="ticker-move" id="market-feed">
+            GOLD: $2,154.20 <span class="m-up">▲ 1.2%</span> ••• 
+            SILVER: $24.85 <span class="m-down">▼ 0.5%</span> ••• 
+            CRUDE OIL: $78.14 <span class="m-up">▲ 2.1%</span> ••• 
+            S&P 500: 5,123.62 <span class="m-up">▲ 0.8%</span> ••• 
+            BTC: $67,412 <span class="m-up">▲ 4.4%</span> ••• 
+            USD/ILS: 3.65 <span class="m-down">▼ 0.2%</span> ••• 
+            DAX: 17,842 <span class="m-down">▼ 0.1%</span> ••• 
+            NASDAQ: 16,274 <span class="m-up">▲ 1.5%</span> ••• 
+            RELOADED TACTICAL FINANCIAL UPLINK... STANDBY...
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -111,6 +128,7 @@
         
         let reports = [{ name: "JERUSALEM", lat: 31.7683, lng: 35.2137, risk: 96, evidence: '' }];
         let savedIntel = JSON.parse(localStorage.getItem('jsi_briefcase')) || [];
+        let markers = [];
 
         function checkGate(el) {
             if (el.value.trim() === 'אחד') {
@@ -126,10 +144,24 @@
         function initializeSystem() { 
             updateHUD(); 
             updateBriefcaseUI(); 
+            updateMarkets();
             map.flyTo(JERUSALEM, 5); 
+            setInterval(updateMarkets, 300000); // Update markets every 5 mins
         }
 
-        function recenterMap() { map.flyTo(JERUSALEM, 11); }
+        function updateMarkets() {
+            // In a production environment, you would fetch real data from AlphaVantage or Yahoo Finance here.
+            // Using placeholder for visual demonstration.
+            const markets = [
+                `GOLD: $${(2150 + Math.random() * 10).toFixed(2)} <span class="m-up">▲ 1.2%</span>`,
+                `SILVER: $${(24.80 + Math.random()).toFixed(2)} <span class="m-down">▼ 0.5%</span>`,
+                `CRUDE OIL: $${(78 + Math.random() * 2).toFixed(2)} <span class="m-up">▲ 2.1%</span>`,
+                `S&P 500: 5,123.62 <span class="m-up">▲ 0.8%</span>`,
+                `BTC: $67,412 <span class="m-up">▲ 4.4%</span>`,
+                `USD/ILS: 3.65 <span class="m-down">▼ 0.2%</span>`
+            ];
+            document.getElementById('market-feed').innerHTML = markets.join(' ••• ') + ' ••• ' + markets.join(' ••• ');
+        }
 
         function saveToBriefcase(city, risk) {
             if (!savedIntel.find(i => i.city === city)) {
@@ -137,20 +169,6 @@
                 localStorage.setItem('jsi_briefcase', JSON.stringify(savedIntel));
                 updateBriefcaseUI();
             }
-        }
-
-        function clearAllIntel() {
-            if(confirm("WIPE ALL SAVED DATA?")) {
-                savedIntel = [];
-                localStorage.removeItem('jsi_briefcase');
-                updateBriefcaseUI();
-            }
-        }
-
-        function removeIntelItem(city) {
-            savedIntel = savedIntel.filter(i => i.city !== city);
-            localStorage.setItem('jsi_briefcase', JSON.stringify(savedIntel));
-            updateBriefcaseUI();
         }
 
         function updateBriefcaseUI() {
@@ -161,9 +179,8 @@
             }
             container.innerHTML = savedIntel.map(i => `
                 <div class="briefcase-item">
-                    <span class="delete-intel" onclick="removeIntelItem('${i.city}')">REMOVE</span>
                     <div class="flex justify-between font-black text-red-500 text-xs"><span>${i.city}</span><span>${i.risk}%</span></div>
-                    <div class="text-[7px] text-zinc-500 mt-1 uppercase tracking-tighter">Report Logged: ${i.time}</div>
+                    <div class="text-[7px] text-zinc-500 mt-1 uppercase">Logged: ${i.time}</div>
                 </div>
             `).join('');
         }
@@ -185,26 +202,29 @@
             });
         }
 
-        let markers = [];
         function renderPins() {
             markers.forEach(m => map.removeLayer(m));
-            markers = [];
             reports.forEach(r => {
                 const icon = L.divIcon({
                     html: `<div class="tactical-marker"><div class="pin-blob"><span class="pin-percentage">${Math.floor(r.risk)}%</span></div><div class="pin-label">${r.name}</div></div>`,
                     className: 'custom-div-icon', iconSize: [40, 50], iconAnchor: [20, 45]
                 });
+                
+                const googleNews = `https://www.google.com/search?q=${r.name}+news+unrest+last+24+hours&tbm=nws`;
+                const xFeed = `https://twitter.com/search?q=${r.name}%20unrest%20filter%3Averified&src=typed_query&f=live`;
+                const tikTok = `https://www.tiktok.com/search?q=${r.name}%20live%20news`;
+
                 const m = L.marker([r.lat, r.lng], { icon: icon }).addTo(map);
                 m.bindPopup(`
                     <div style="width:230px; color:#000;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:5px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">
                             <b style="font-size:12px;">${r.name} SECTOR</b>
-                            <button onclick="saveToBriefcase('${r.name}', ${Math.floor(r.risk)})" style="background:#ef4444; color:#fff; font-size:8px; padding:3px 8px; border-radius:2px; font-weight:bold;">SAVE TO BRIEFCASE</button>
+                            <button onclick="saveToBriefcase('${r.name}', ${Math.floor(r.risk)})" style="background:#000; color:#fff; font-size:8px; padding:3px 8px; border-radius:2px;">SAVE</button>
                         </div>
-                        <div class="intel-feed">
-                            <div class="intel-item"><span style="color:#ef4444; font-weight:900; font-size:8px;">OSINT:</span> 24hr activity spike in ${r.name}.</div>
-                            <div class="intel-item"><span style="color:#ef4444; font-weight:900; font-size:8px;">X_MONITOR:</span> High volume on local hashtags.</div>
-                        </div>
+                        <p style="font-size:10px; font-weight:bold; color:#ef4444; margin-bottom:8px;">LIVE INTELLIGENCE UPLINKS:</p>
+                        <a href="${googleNews}" target="_blank" class="live-link-btn">📡 GOOGLE NEWS (LATEST 24H)</a>
+                        <a href="${xFeed}" target="_blank" class="live-link-btn">🐦 X / TWITTER VERIFIED FEED</a>
+                        <a href="${tikTok}" target="_blank" class="live-link-btn">📱 TIKTOK VIDEO INTEL</a>
                     </div>
                 `);
                 markers.push(m);
@@ -217,9 +237,8 @@
         }
 
         function shareSite() {
-            const text = `⚠️ JSI TACTICAL ALERT ⚠️\nLive Risk Monitoring active.\n${window.location.href}\nPass: אחד`;
-            if (navigator.share) navigator.share({ text: text });
-            else alert("Link Copied!");
+            const text = `⚠️ JSI TACTICAL ALERT ⚠️\nLive Monitoring active.\n${window.location.href}\nPass: אחד`;
+            if (navigator.share) navigator.share({ text: text }); else alert("Link Copied!");
         }
 
         document.getElementById('map-search').addEventListener('keypress', e => { if (e.key === 'Enter') { document.getElementById('report-loc').value = e.target.value; openReport(); } });
