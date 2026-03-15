@@ -103,7 +103,6 @@
             }
         }
 
-        // TAP TO LOCATE LOGIC
         map.on('click', function(e) {
             tappedCoords = e.latlng;
             openReport(true);
@@ -135,12 +134,11 @@
             const modal = document.getElementById('report-modal');
             const coordDisplay = document.getElementById('coords-display');
             const cityInput = document.getElementById('report-loc');
-            
             modal.style.display = 'flex';
             if(isTap && tappedCoords) {
                 coordDisplay.style.display = 'block';
                 coordDisplay.innerText = `GPS: ${tappedCoords.lat.toFixed(4)}, ${tappedCoords.lng.toFixed(4)}`;
-                cityInput.placeholder = "Enter name for this location...";
+                cityInput.placeholder = "Label this spot...";
             } else {
                 coordDisplay.style.display = 'none';
                 tappedCoords = null;
@@ -148,10 +146,7 @@
             }
         }
 
-        function closeReport() {
-            document.getElementById('report-modal').style.display = 'none';
-            tappedCoords = null;
-        }
+        function closeReport() { document.getElementById('report-modal').style.display = 'none'; tappedCoords = null; }
 
         async function submitIntel() {
             const cityName = document.getElementById('report-loc').value || (tappedCoords ? "MARKED LOCATION" : "");
@@ -159,46 +154,51 @@
             if(!cityName && !tappedCoords) return;
 
             let lat, lon, finalName;
-
-            if (tappedCoords) {
-                lat = tappedCoords.lat;
-                lon = tappedCoords.lng;
-                finalName = cityName.toUpperCase() || "MARKED COORDINATE";
-            } else {
+            if (tappedCoords) { lat = tappedCoords.lat; lon = tappedCoords.lng; finalName = cityName.toUpperCase(); } 
+            else {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cityName}`);
                 const data = await res.json();
-                if(data[0]) {
-                    lat = parseFloat(data[0].lat);
-                    lon = parseFloat(data[0].lon);
-                    finalName = cityName.toUpperCase();
-                } else { alert("Location not found."); return; }
+                if(data[0]) { lat = parseFloat(data[0].lat); lon = parseFloat(data[0].lon); finalName = cityName.toUpperCase(); } 
+                else { alert("Location not found."); return; }
             }
 
-            // DISCORD DISPATCH
             if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
-                fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ content: `🚨 **NEW INTEL**: ${finalName} | Type: ${type} | GPS: ${lat}, ${lon}` })
+                fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: `🚨 TACTICAL ALERT: ${finalName}`,
+                            color: 15548997,
+                            fields: [
+                                { name: "Threat", value: type, inline: true },
+                                { name: "GPS", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, inline: true },
+                                { name: "Link", value: `[Map View](https://www.google.com/maps?q=${lat},${lon})` }
+                            ],
+                            timestamp: new Date()
+                        }]
+                    })
                 });
             }
 
             const icon = L.divIcon({ html: `<div class="pin-blob"><span style="transform:rotate(45deg);font-size:10px;font-weight:900;">!</span></div><div class="pin-label">${finalName}</div>`, className: 'custom-icon' });
             const marker = L.marker([lat, lon], {icon}).addTo(map);
-            
-            marker.bindPopup(`
-                <div style="width:220px; color:#000;">
-                    <b style="font-size:14px;">${finalName}</b><br>
-                    <div style="margin-top:10px; font-size:10px; font-weight:900; color:#ef4444;">TACTICAL UPLINKS:</div>
-                    <a href="https://www.google.com/search?q=${finalName}+breaking+news" target="_blank" class="intel-link">TOP 10 NEWS ARTICLES</a>
-                    <a href="https://twitter.com/search?q=${finalName}%20alert&f=live" target="_blank" class="intel-link">SOCIAL INFLUENCERS (X)</a>
-                    <a href="https://www.tiktok.com/search?q=${finalName}+unrest" target="_blank" class="intel-link">TIKTOK FIELD FOOTAGE</a>
-                </div>
-            `);
-            
+            marker.bindPopup(`<div style="width:200px; color:#000;"><b>${finalName}</b><br><a href="https://www.google.com/search?q=${finalName}+news" target="_blank" class="intel-link">NEWS FEED</a><a href="https://twitter.com/search?q=${finalName}+alert&f=live" target="_blank" class="intel-link">X FEED</a></div>`);
             map.flyTo([lat, lon], 10);
             closeReport();
         }
 
-        function shareSite() { navigator.share ? navigator.share({text: `JSI Tactical | Pass: אחד`}) : alert("Link Copied"); }
+        function shareSite() {
+            const shareTitle = "JSI Tactical Monitor";
+            const shareText = `⚠️ JSI TACTICAL MONITOR | LIVE UPLINK\n\nI’ve developed the JSI Tactical Risk Monitor to provide our community with a real-time, independent intelligence tool. In an era of rapid escalation and misinformation, this platform allows us to track global threats, monitor market volatility, and report localized incidents directly to a central command.\n\nHow to use the System:\n1. Access: Tap the link and enter the gate key: אחד\n2. Monitor: The top red bar streams live global intelligence headlines (tap them to read). The bottom bar tracks Gold, Silver, and the USD/ILS exchange rate.\n3. Report: Use the 📡 REPORT INTEL button to pin a location if you see an anti-semitic incident, protest, or hostile activity.\n4. Briefcase: Use the 💼 BRIEFCASE to save specific sectors for long-term monitoring.\n\nLink: Jewish Safety Index (${window.location.href})\nPassword: אחד`;
+            
+            if (navigator.share) {
+                navigator.share({ title: shareTitle, text: shareText }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert("Tactical message copied to clipboard!");
+            }
+        }
     </script>
 </body>
 </html>
