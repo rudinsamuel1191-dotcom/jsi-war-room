@@ -10,42 +10,62 @@
         body { background-color: #05070a; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
         
-        /* Tactical HUD */
-        #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+        /* Identity Gate Overlay - Enhanced Visuals */
+        #access-gate {
+            position: fixed; inset: 0; z-index: 9999; 
+            background-color: #05070a;
+            background-image: linear-gradient(to bottom, rgba(5, 7, 10, 0.4), rgba(5, 7, 10, 0.9)), 
+                              url('https://i.imgur.com/kS5x87J.jpeg');
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px; transition: opacity 1.5s ease;
+        }
+        .hebrew-text { font-size: 36px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.7); }
+        .gate-input {
+            background: rgba(255,255,255,0.1); border: none; border-bottom: 3px solid #ef4444;
+            color: #ef4444; font-size: 36px; width: 140px; text-align: center;
+            outline: none; font-weight: bold; margin: 0 10px; border-radius: 4px;
+            backdrop-filter: blur(5px); transition: 0.3s;
+        }
+        .gate-input:focus { border-color: #10b981; background: rgba(255,255,255,0.15); }
+        .gate-hint { color: #d1d5db; font-size: 11px; margin-top: 50px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+
+        /* HUD & UI Elements */
+        #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
         .hud-card { background: rgba(0, 0, 0, 0.85); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; backdrop-filter: blur(5px); }
-        
-        /* Floating Action Menu */
         #action-menu { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 15px; }
         .action-btn { background: #ef4444; color: white; padding: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); cursor: pointer; transition: 0.3s; width: 65px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
-        .action-btn span { font-size: 22px; margin-bottom: 2px; }
-        .btn-strike { background: #f97316; box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+        .btn-strike { background: #f97316; }
         .btn-secondary { background: #1e293b; border-color: #475569; width: 50px; height: 50px; align-self: flex-end; }
-
-        /* Slowed Ticker */
+        
+        /* Ticker */
         #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 120s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; letter-spacing: 1px; }
+        .ticker-move { white-space: nowrap; animation: ticker 120s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Impact Animation */
+        /* Visuals */
         .impact-ring { border: 2px solid #f97316; border-radius: 50%; background: rgba(249, 115, 22, 0.2); animation: impact 2s ease-out infinite; }
         @keyframes impact { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-        
-        /* Risk Pins */
         .risk-pin { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .risk-text { transform: rotate(45deg); font-size: 10px; font-weight: 900; color: white; }
-        .high-risk { animation: pulse 1.5s infinite; background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-        @keyframes pulse { 0% { transform: rotate(-45deg) scale(1); } 50% { transform: rotate(-45deg) scale(1.1); } 100% { transform: rotate(-45deg) scale(1); } }
     </style>
 </head>
 <body>
 
+    <div id="access-gate">
+        <div class="hebrew-text" dir="rtl">
+            שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off">
+        </div>
+        <div class="gate-hint">Verification Required for Tactical Uplink</div>
+    </div>
+
     <div id="hud-top">
         <div class="hud-card">
-            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Network Uplink</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5124</span> OPS ACTIVE</div>
+            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Uplink Secure</div>
+            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5681</span> ACTIVE OPS</div>
         </div>
         <div class="hud-card">
-            <input type="text" id="map-search" placeholder="LOCATE SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-40 py-1 uppercase font-bold">
+            <input type="text" id="map-search" placeholder="CHECK SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-36 py-1 uppercase font-bold">
         </div>
     </div>
 
@@ -59,7 +79,7 @@
     <div id="map"></div>
 
     <div id="ticker-wrap">
-        <div class="ticker-move" id="news-stream">SYNCING WITH WORLD NEWS DATA... ESTABLISHING SECURE CONNECTION...</div>
+        <div class="ticker-move" id="news-stream">INITIALIZING GLOBAL RISK ANALYSIS... STANDBY...</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -70,40 +90,52 @@
         let currentLayer = darkLayer;
 
         let reports = [
-            { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 92, lastUpdate: Date.now(), type: 'risk' },
-            { id: 2, name: "Paris", lat: 48.8566, lng: 2.3522, risk: 85, lastUpdate: Date.now(), type: 'risk' }
+            { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 96, lastUpdate: Date.now(), type: 'risk' },
+            { id: 2, name: "Tel Aviv", lat: 32.0853, lng: 34.7818, risk: 85, lastUpdate: Date.now(), type: 'risk' }
         ];
 
-        // 1. Live Fluctuations
+        // Access Gate Logic
+        function checkGate(el) {
+            if (el.value.trim() === 'אחד') {
+                document.getElementById('access-gate').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('access-gate').style.display = 'none';
+                    initializeSystem();
+                }, 1500);
+            }
+        }
+
+        function initializeSystem() {
+            updateHUD();
+            getNews();
+            setInterval(updateHUD, 4000);
+            setInterval(decayLogic, 15000);
+            // Autofocus search on entry
+            setTimeout(() => document.getElementById('map-search').focus(), 500);
+        }
+
+        // HUD & Data Logic
         function updateHUD() {
-            document.getElementById('user-count').innerText = (5200 + Math.floor(Math.random() * 800)).toLocaleString();
-            reports.forEach(r => {
-                r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.4 - 0.7)));
-            });
+            document.getElementById('user-count').innerText = (5500 + Math.floor(Math.random() * 600)).toLocaleString();
+            reports.forEach(r => { r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.6 - 0.8))); });
             renderPins();
         }
-        setInterval(updateHUD, 4000);
 
-        // 2. Decay Logic (Risks fade without new reports)
-        setInterval(() => {
+        function decayLogic() {
             const now = Date.now();
             reports.forEach(r => {
                 const ageHours = (now - r.lastUpdate) / (1000 * 60 * 60);
-                if (ageHours > 0.005) { // Visual decay for demo
-                    r.risk *= 0.995; 
-                    if (r.type === 'strike' && ageHours > 0.1) r.type = 'risk'; // Strikes turn back to risk markers after time
-                }
+                if (ageHours > 0.005) r.risk *= 0.995; 
             });
-        }, 12000);
+        }
 
-        // 3. Reporting Functions
         function reportIncident() {
             const name = prompt("Location of Anti-Semitic incident:");
             if (name) processReport(name, 25, 'risk');
         }
 
         function reportRocket() {
-            const name = prompt("Location of Rocket Impact / Siren:");
+            const name = prompt("Location of Rocket Impact:");
             if (name) processReport(name, 45, 'strike');
         }
 
@@ -118,7 +150,7 @@
                         existing.type = type;
                         existing.lastUpdate = Date.now();
                     } else {
-                        reports.push({ name: name.toUpperCase(), lat: parseFloat(lat), lng: parseFloat(lon), risk: 75 + impact, lastUpdate: Date.now(), type: type });
+                        reports.push({ name: name.toUpperCase(), lat: parseFloat(lat), lng: parseFloat(lon), risk: 70 + impact, lastUpdate: Date.now(), type: type });
                     }
                     map.flyTo([lat, lon], 10);
                     renderPins();
@@ -126,40 +158,23 @@
             });
         }
 
-        // 4. Rendering (80% Always Shown)
         let markers = [];
         function renderPins() {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
-
             reports.forEach(r => {
                 const bounds = map.getBounds();
                 if (r.risk >= 80 || bounds.contains([r.lat, r.lng])) {
-                    let iconHtml = '';
+                    let iconHtml = (r.type === 'strike') 
+                        ? `<div class="impact-ring" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">🚀</div>`
+                        : `<div class="risk-pin ${r.risk >= 80 ? 'high-risk' : ''}" style="width:30px; height:30px;"><span class="risk-text">${Math.floor(r.risk)}%</span></div>`;
                     
-                    if (r.type === 'strike') {
-                        // Orange Impact Visual
-                        iconHtml = `<div class="impact-ring" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">🚀</div>`;
-                    } else {
-                        // Standard Risk Pin
-                        iconHtml = `<div class="risk-pin ${r.risk >= 80 ? 'high-risk' : ''}" style="width:30px; height:30px;">
-                                    <span class="risk-text">${Math.floor(r.risk)}%</span>
-                                   </div>`;
-                    }
-
-                    const icon = L.divIcon({ className: 'custom-m', html: iconHtml, iconSize: [40, 40] });
-                    const m = L.marker([r.lat, r.lng], { icon }).addTo(map);
-                    m.bindPopup(`<b>${r.name}</b><br>Type: ${r.type.toUpperCase()}<br>Risk: ${Math.floor(r.risk)}%`);
+                    const m = L.marker([r.lat, r.lng], { icon: L.divIcon({ html: iconHtml, iconSize: [40, 40], className: 'c-pin' }) }).addTo(map);
+                    m.bindPopup(`<b>${r.name}</b><br>Risk: ${Math.floor(r.risk)}%`);
                     markers.push(m);
                 }
             });
         }
-        map.on('moveend', renderPins);
-
-        // 5. Shared Logic
-        document.getElementById('map-search').addEventListener('keypress', e => {
-            if (e.key === 'Enter') processReport(e.target.value, 0, 'risk');
-        });
 
         function toggleMapMode() {
             map.removeLayer(currentLayer);
@@ -168,21 +183,20 @@
         }
 
         function shareSite() {
-            const text = `⚠️ JSI TACTICAL UPDATE: Monitoring high-risk zones and impact data. View live % levels:`;
-            if (navigator.share) navigator.share({ title: 'JSI Risk Monitor', text: text, url: window.location.href });
-            else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Copied to Clipboard."); }
+            const text = "⚠️ JSI Live Risk Monitor. Access authorized.";
+            if (navigator.share) navigator.share({ title: 'JSI', text: text, url: window.location.href });
+            else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Link Copied."); }
         }
 
         async function getNews() {
             try {
                 const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await res.json();
-                const news = data.World.map(n => ` [REPORT] ${n.title.toUpperCase()} ••• `).join("");
-                document.getElementById('news-stream').innerText = news + news; 
-            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL TACTICAL FEEDS... STATUS: ACTIVE... "; }
+                document.getElementById('news-stream').innerText = data.World.map(n => ` [LIVE REPORT] ${n.title.toUpperCase()} ••• `).join(""); 
+            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL TACTICAL DATA... "; }
         }
-        getNews(); setInterval(getNews, 300000);
-        setTimeout(renderPins, 1000);
+        
+        document.getElementById('map-search').addEventListener('keypress', e => { if (e.key === 'Enter') processReport(e.target.value, 0, 'risk'); });
     </script>
 </body>
 </html>
