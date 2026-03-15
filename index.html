@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSI | War Room Command</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #05070a; margin: 0; padding: 20px; font-family: monospace; color: white; }
+        #map { height: 600px; width: 100%; background: #0b0e14; border: 2px solid #1f2937; border-radius: 12px; }
+        .danger-pin {
+            background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 50% 0;
+            color: white; font-weight: 800; font-size: 10px; display: flex;
+            align-items: center; justify-content: center; transform: rotate(-45deg);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite;
+        }
+        .pin-text { transform: rotate(45deg); }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="margin-bottom: 20px; border-left: 4px solid #ef4444; padding-left: 15px;">
+        <h1 style="color: #ef4444; margin: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 24px;">JSI Command Center</h1>
+        <p style="color: #9ca3af; font-size: 12px; margin-top: 5px;">LIVE MONITORING // JEWISH SAFETY INDEX // GLOBAL THEATER</p>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map focused on the US
+        const map = L.map('map').setView([37.8, -96], 4);
+
+        // Dark Theme Map Tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        }).addTo(map);
+
+        // Mock Data for the War Room Pins
+        const locations = [
+            { name: "New York", coords: [40.7128, -74.0060], score: 84 },
+            { name: "California", coords: [36.7783, -119.4179], score: 71 },
+            { name: "Florida", coords: [27.6648, -81.5158], score: 52 },
+            { name: "London", coords: [51.5074, -0.1278], score: 65 },
+            { name: "Paris", coords: [48.8566, 2.3522], score: 78 }
+        ];
+
+        // Draw the Red Pins
+        locations.forEach(loc => {
+            const icon = L.divIcon({
+                className: 'danger-pin',
+                html: `<span class="pin-text">${loc.score}%</span>`,
+                iconSize: [35, 35]
+            });
+            L.marker(loc.coords, { icon: icon }).addTo(map).bindPopup(`
+                <div style="color: black;">
+                    <b style="font-size: 14px;">${loc.name}</b><br>
+                    <span style="color: #ef4444; font-weight: bold;">Risk Level: ${loc.score}%</span>
+                </div>
+            `);
+        });
+    </script>
+</body>
+</html>
