@@ -11,74 +11,82 @@
         #map-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
         #map { height: 100%; width: 100%; background: #000; z-index: 1; }
         
-        /* Access Gate */
-        #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 1s ease; }
-        .hebrew-text { font-size: 34px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; }
-        .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 130px; text-align: center; outline: none; font-weight: bold; }
+        /* Access Gate - Hardened */
+        #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
+        .gate-input-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .hebrew-text { font-size: 28px; font-weight: bold; letter-spacing: 2px; line-height: 1.5; }
+        .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; transition: 0.3s; }
+        .gate-input:focus { border-bottom-color: white; color: white; }
+        .gate-btn { background: #ef4444; color: white; padding: 10px 30px; border-radius: 4px; font-weight: 900; font-size: 12px; letter-spacing: 2px; margin-top: 10px; cursor: pointer; }
 
-        /* INTELLIGENCE BULLETIN (TOP NEWS) */
-        #news-bulletin-wrap { width: 100%; height: 32px; background: #ef4444; color: #000; z-index: 2000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; cursor: pointer; }
-        .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 2001; position: relative; white-space: nowrap; border-right: 1px solid white; }
-        .news-ticker-move { white-space: nowrap; animation: ticker-news 80s linear infinite; display: flex; align-items: center; }
-        .news-item { margin-right: 40px; text-decoration: none; color: inherit; }
-        .news-item:hover { text-decoration: underline; }
+        /* Top News Bulletin */
+        #news-bulletin-wrap { width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; position: relative; }
+        .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; position: relative; white-space: nowrap; border-right: 1px solid white; }
+        .news-ticker-move { white-space: nowrap; animation: ticker-news 90s linear infinite; display: flex; align-items: center; }
+        .news-item { margin-right: 50px; text-decoration: none; color: inherit; transition: 0.2s; }
+        .news-item:hover { color: white; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        /* Sidebar & Modals */
+        /* HUD - Positioned to not overlap news */
+        #hud-top { position: absolute; top: 50px; width: 100%; z-index: 2000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+        .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 15px; border-radius: 4px; pointer-events: auto; backdrop-filter: blur(5px); }
+        
+        /* Sidebar */
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 320px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 9600; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 25px; box-shadow: -15px 0 40px rgba(0,0,0,0.9); }
         #briefcase-sidebar.open { right: 0; }
         .briefcase-item { background: #111; padding: 15px; border-radius: 6px; border: 1px solid #222; border-left: 4px solid #ef4444; margin-bottom: 12px; }
-        
-        #report-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 9500; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
+
+        /* Report Modal */
+        #report-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.96); z-index: 9500; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0a0a0a; border: 1px solid #333; width: 100%; max-width: 420px; padding: 25px; border-radius: 8px; border-top: 5px solid #ef4444; }
         .modal-select { background: #1a1a1a; border: 1px solid #444; color: white; width: 100%; padding: 14px; margin-top: 8px; border-radius: 6px; outline: none; font-size: 14px; }
 
-        /* HUD & Action Menu */
-        #hud-top { position: absolute; top: 40px; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
-        .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; }
-        #action-menu { position: absolute; right: 15px; top: 55%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-align: center; line-height: 1.1; }
+        /* Action Buttons */
+        #action-menu { position: absolute; right: 15px; top: 55%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 15px; }
+        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.2s; width: 70px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-align: center; }
+        .action-btn:active { transform: scale(0.9); }
 
-        /* MARKET TICKER (BOTTOM) */
-        #ticker-container { width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 1001; }
+        /* Market Ticker (Bottom) */
+        #ticker-container { width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 2000; }
 
-        /* Markers */
-        .tactical-marker { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* Map UI Tweaks */
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 34px; height: 34px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
-        .pin-percentage { transform: rotate(45deg); font-size: 10px; font-weight: 900; color: white; }
-        .pin-label { background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; text-transform: uppercase; }
-        .live-link-btn { display: block; background: #1a1a1a; border: 1px solid #333; color: #ef4444; font-size: 10px; padding: 8px; border-radius: 4px; margin-bottom: 6px; text-decoration: none; font-weight: bold; text-align: center; }
+        .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 3px 6px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; text-transform: uppercase; white-space: nowrap; }
+        .live-link-btn { display: block; background: #1a1a1a; border: 1px solid #333; color: #ef4444; font-size: 10px; padding: 10px; border-radius: 4px; margin-top: 8px; text-decoration: none; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="access-gate">
-        <div class="hebrew-text" dir="rtl">שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off"></div>
+        <div class="gate-input-wrap">
+            <div class="hebrew-text" dir="rtl">שמע ישראל ה' אלוהינו ה'</div>
+            <input type="text" id="gate-key" class="gate-input" placeholder="____" autocomplete="off" ontouchstart="">
+            <button class="gate-btn" onclick="manualUnlock()">AUTHORIZE ACCESS</button>
+        </div>
     </div>
 
     <div id="news-bulletin-wrap">
-        <div class="bulletin-label">GLOBAL INTEL FEED</div>
-        <div class="news-ticker-move" id="live-news-ticker">UPLINKING TO GLOBAL NEWS HUB... STANDBY...</div>
+        <div class="bulletin-label">GLOBAL COMMAND INTEL</div>
+        <div class="news-ticker-move" id="live-news-ticker">INITIALIZING GLOBAL NEWS UPLINK... STANDBY...</div>
     </div>
 
     <div id="briefcase-sidebar">
         <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
-            <div><h2 class="text-red-500 font-black text-xs tracking-[0.2em]">OPERATOR BRIEFCASE</h2></div>
+            <h2 class="text-red-500 font-black text-xs tracking-[0.2em]">OPERATOR BRIEFCASE</h2>
             <button onclick="toggleBriefcase()" class="text-zinc-500 text-xl font-bold">×</button>
         </div>
-        <div id="briefcase-content" class="space-y-4"></div>
+        <div id="briefcase-content"></div>
     </div>
 
     <div id="report-modal">
         <div class="modal-card">
-            <h2 class="text-white font-black mb-1 uppercase text-xl">TRANSMIT INTEL</h2>
+            <h2 class="text-white font-black uppercase text-xl">TRANSMIT INTEL</h2>
             <div class="space-y-4 mt-4">
-                <input type="text" id="report-loc" placeholder="City Name / Sector" class="modal-select bg-black">
+                <input type="text" id="report-loc" placeholder="City / Sector" class="modal-select bg-black">
                 <select id="report-type" class="modal-select">
                     <option value="ANTI-SEMITIC INCIDENT">📢 ANTI-SEMITIC INCIDENT</option>
                     <option value="PROTEST / RIOT">⚠️ PROTEST / RIOT</option>
                     <option value="HOSTILE ACTIVITY">🚩 HOSTILE ACTIVITY</option>
-                    <option value="OTHER THREAT">📡 OTHER TACTICAL THREAT</option>
                 </select>
                 <input type="text" id="report-evidence" placeholder="Source Link (Optional)" class="modal-select bg-black">
             </div>
@@ -92,11 +100,11 @@
     <div id="map-container">
         <div id="hud-top">
             <div class="hud-card">
-                <div style="font-size: 8px; color: #9ca3af;">OPS ONLINE</div>
+                <div style="font-size: 8px; color: #9ca3af; letter-spacing: 1px;">NODES ONLINE</div>
                 <div style="color: #10b981; font-weight: 900; font-size: 20px;"><span id="user-count">6,412</span></div>
             </div>
             <div class="hud-card">
-                <input type="text" id="map-search" placeholder="SEARCH SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-32 py-1 uppercase font-bold">
+                <input type="text" id="map-search" placeholder="SEARCH SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-xs w-32 py-1 uppercase font-bold">
             </div>
         </div>
 
@@ -106,6 +114,7 @@
             <div class="action-btn" style="background:#000; border-color:#ef4444;" onclick="window.location.href='mailto:contact@jsi-intel.com'"><span>💬</span>FEED<br>BACK</div>
             <button class="action-btn" style="background:#7c3aed; border-color:#a78bfa;" onclick="shareSite()"><span>🔗</span>SHARE</button>
         </div>
+        
         <div id="map"></div>
     </div>
 
@@ -119,9 +128,8 @@
                 {"proName": "OANDA:XAGUSD", "title": "SILVER"},
                 {"proName": "FX_IDC:USDILS", "title": "USD/ILS"},
                 {"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"},
-                {"proName": "OANDA:WTICOUSD", "title": "CRUDE OIL"},
-                {"proName": "FOREXCOM:SPX500", "title": "S&P 500"},
-                {"proName": "INDEX:DXY", "title": "US DOLLAR INDEX"}
+                {"proName": "OANDA:WTICOUSD", "title": "OIL"},
+                {"proName": "FOREXCOM:SPX500", "title": "S&P 500"}
             ],
             "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "en"
             }
@@ -138,14 +146,30 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
         
         let markers = [];
-        let reports = [{ name: "JERUSALEM (HQ)", lat: 31.7683, lng: 35.2137, risk: 99 }];
+        let reports = [{ name: "JERUSALEM (HQ)", lat: 31.7683, lng: 35.2137 }];
         let savedIntel = JSON.parse(localStorage.getItem('jsi_briefcase')) || [];
 
-        function checkGate(el) {
-            if (el.value.trim() === 'אחד') {
-                document.getElementById('access-gate').style.opacity = '0';
-                setTimeout(() => { document.getElementById('access-gate').style.display = 'none'; initializeSystem(); }, 1000);
+        // GATE LOGIC - FIXED
+        function manualUnlock() {
+            const val = document.getElementById('gate-key').value.trim();
+            if (val === 'אחד') {
+                unlockSystem();
+            } else {
+                document.getElementById('gate-key').style.borderColor = 'white';
+                setTimeout(() => { document.getElementById('gate-key').style.borderColor = '#ef4444'; }, 400);
             }
+        }
+
+        document.getElementById('gate-key').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') manualUnlock();
+        });
+
+        function unlockSystem() {
+            document.getElementById('access-gate').style.opacity = '0';
+            setTimeout(() => { 
+                document.getElementById('access-gate').style.display = 'none'; 
+                initializeSystem(); 
+            }, 800);
         }
 
         function toggleBriefcase() { document.getElementById('briefcase-sidebar').classList.toggle('open'); }
@@ -159,69 +183,95 @@
             map.flyTo(JERUSALEM, 5); 
             setInterval(fetchLiveNews, 600000);
             setInterval(() => {
-                document.getElementById('user-count').innerText = (6500 + Math.floor(Math.random() * 200)).toLocaleString();
+                document.getElementById('user-count').innerText = (6400 + Math.floor(Math.random() * 300)).toLocaleString();
             }, 5000);
         }
 
         async function fetchLiveNews() {
             try {
-                // Using a proxy to convert Google News RSS to JSON
-                const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=world+breaking+news+unrest&hl=en-US&gl=US&ceid=US:en');
+                const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=breaking+world+news+unrest&hl=en-US&gl=US&ceid=US:en');
                 const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
                 const data = await response.json();
-                
                 if(data.items) {
                     const newsHtml = data.items.slice(0, 10).map(item => 
-                        `<a href="${item.link}" target="_blank" class="news-item">[ BREAKING: ${item.title.toUpperCase()} ]</a>`
+                        `<a href="${item.link}" target="_blank" class="news-item">[ INTEL: ${item.title.toUpperCase()} ]</a>`
                     ).join(' ••• ');
                     document.getElementById('live-news-ticker').innerHTML = newsHtml + ' ••• ' + newsHtml;
                 }
             } catch (e) {
-                document.getElementById('live-news-ticker').innerText = "ENCRYPTED NEWS FEED TEMPORARILY OFFLINE...";
+                document.getElementById('live-news-ticker').innerText = "ENCRYPTED SIGNAL LOST... RECONNECTING...";
             }
         }
 
         async function submitIntel() {
             const city = document.getElementById('report-loc').value;
-            const type = document.getElementById('report-type').value;
-            const evidence = document.getElementById('report-evidence').value;
             if (!city) return;
-
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`);
-            const data = await res.json();
-            
-            if (data.length > 0) {
-                const { lat, lon, display_name } = data[0];
-                const cleanName = display_name.split(',')[0].toUpperCase();
-                
-                reports.push({ name: cleanName, lat: parseFloat(lat), lng: parseFloat(lon), risk: 75 });
-                renderPins();
-                map.flyTo([lat, lon], 10);
-                
-                // Discord Webhook Dispatch
-                if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
-                    fetch(DISCORD_WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            embeds: [{
-                                title: `🚨 NEW TACTICAL REPORT: ${cleanName}`,
-                                description: `Type: ${type}\nSource: ${evidence || "N/A"}`,
-                                color: 15548997,
-                                timestamp: new Date()
-                            }] 
-                        })
-                    });
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`);
+                const data = await res.json();
+                if (data.length > 0) {
+                    const { lat, lon, display_name } = data[0];
+                    const cleanName = display_name.split(',')[0].toUpperCase();
+                    reports.push({ name: cleanName, lat: parseFloat(lat), lng: parseFloat(lon) });
+                    renderPins();
+                    map.flyTo([lat, lon], 10);
+                    
+                    if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
+                        fetch(DISCORD_WEBHOOK_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: `🚨 **NEW REPORT**: ${cleanName} SECTOR` })
+                        });
+                    }
+                    closeReport();
                 }
-                closeReport();
-            }
+            } catch (e) { alert("Uplink failed. Try another sector."); }
         }
 
         function renderPins() {
             markers.forEach(m => map.removeLayer(m));
             reports.forEach(r => {
                 const icon = L.divIcon({
-                    html: `<div class="tactical-marker"><div class="pin-blob"><span class="pin-percentage">!</span></div><div class="pin-label">${r.name}</div></div>`,
+                    html: `<div class="tactical-marker"><div class="pin-blob"><span style="transform:rotate(45deg);font-size:10px;font-weight:900;">!</span></div><div class="pin-label">${r.name}</div></div>`,
                     className: 'custom-div-icon', iconSize: [40, 50], iconAnchor: [20, 45]
                 });
                 const m = L.marker([r.lat, r.lng], { icon: icon }).addTo(map);
+                m.bindPopup(`<div style="width:200px; color:#000; font-family:sans-serif;">
+                    <b style="font-size:12px;">${r.name} SECTOR</b><br>
+                    <a href="https://www.google.com/search?q=${r.name}+unrest" target="_blank" class="live-link-btn">GOOGLE INTEL</a>
+                    <a href="https://twitter.com/search?q=${r.name}%20unrest&f=live" target="_blank" class="live-link-btn">X LIVE FEED</a>
+                    <button onclick="saveToBriefcase('${r.name}')" style="width:100%; background:#000; color:#fff; padding:8px; margin-top:8px; font-size:10px; font-weight:bold; cursor:pointer;">SAVE TO BRIEFCASE</button>
+                </div>`);
+                markers.push(m);
+            });
+        }
+
+        function saveToBriefcase(city) {
+            if (!savedIntel.find(i => i.city === city)) {
+                savedIntel.push({ city, time: new Date().toLocaleDateString() });
+                localStorage.setItem('jsi_briefcase', JSON.stringify(savedIntel));
+                updateBriefcaseUI();
+            }
+        }
+
+        function updateBriefcaseUI() {
+            const container = document.getElementById('briefcase-content');
+            container.innerHTML = savedIntel.length ? savedIntel.map(i => `
+                <div class="briefcase-item">
+                    <div class="flex justify-between font-black text-red-500 text-xs"><span>${i.city}</span></div>
+                    <div class="text-[8px] text-zinc-500 mt-1 uppercase">LOGGED: ${i.time}</div>
+                </div>
+            `).join('') : '<p class="text-center text-zinc-700 mt-10 text-[10px]">NO SAVED INTEL</p>';
+        }
+
+        function shareSite() {
+            const text = `⚠️ JSI TACTICAL ALERT ⚠️\nLive Monitoring active.\nPass: אחד`;
+            if (navigator.share) navigator.share({ text: text }); else alert("Link Copied!");
+        }
+
+        document.getElementById('map-search').addEventListener('keypress', e => { 
+            if (e.key === 'Enter') { document.getElementById('report-loc').value = e.target.value; openReport(); } 
+        });
+    </script>
+</body>
+</html>
