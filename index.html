@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #000; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #000; }
+        /* Split Screen Architecture */
+        body { background-color: #000; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #map-container { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
+        #map { height: 100%; width: 100%; background: #000; z-index: 1; }
         
         /* FIRST SCREEN: Identity Gate */
         #access-gate {
@@ -35,11 +38,23 @@
         .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 68px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1.1; }
         .btn-strike { background: #f97316; }
         .btn-secondary { background: #111; border-color: #444; width: 68px; height: 68px; border-radius: 8px; font-size: 9px; }
-        .btn-recenter { background: #1e3a8a; border-color: #3b82f6; } /* Navy/Blue Tactical Theme */
+        .btn-recenter { background: #1e3a8a; border-color: #3b82f6; }
         
-        #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: #000; border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 130s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; }
-        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+        /* SLOW TICKER: Locked at the bottom */
+        #ticker-wrap { width: 100%; height: 45px; background: #000; border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; position: relative; }
+        .ticker-move { 
+            white-space: nowrap; 
+            animation: ticker 250s linear infinite; /* Increased to 250s for maximum readability */
+            color: #ef4444; 
+            font-weight: bold; 
+            font-size: 14px; 
+            padding-left: 100%; 
+            letter-spacing: 0.5px;
+        }
+        @keyframes ticker { 
+            0% { transform: translateX(0); } 
+            100% { transform: translateX(-100%); } 
+        }
 
         /* Tactical Pins */
         .impact-ring { border: 2px solid #f97316; border-radius: 50%; background: rgba(249, 115, 22, 0.2); animation: impact 2s ease-out infinite; }
@@ -59,42 +74,43 @@
         <div class="briefing-card" onclick="event.stopPropagation()">
             <h2 class="text-red-500 font-bold text-xl mb-4 border-b border-slate-800 pb-2">SITE INSTRUCTIONS</h2>
             <div class="text-sm space-y-4 text-slate-300">
-                <p><b class="text-white">RECENTER:</b> Tap the blue icon to instantly fly back to the Jerusalem Command Center.</p>
-                <p><b class="text-white">SEARCH:</b> Enter City, Zip, or State in the top bar to analyze specific sectors.</p>
-                <p><b class="text-white">📢 INTEL:</b> Report activity to increase local risk by 25%.</p>
-                <p><b class="text-white">🚀 STRIKE:</b> Report kinetic impacts for 45% risk spike.</p>
+                <p><b class="text-white">NEWS FEED:</b> Locked at the bottom. Speed has been reduced for detailed reading. It remains static even when the map is zoomed.</p>
+                <p><b class="text-white">LOCATE:</b> Use the top-right bar to find any city, state, or zip code.</p>
+                <p><b class="text-white">RECENTER:</b> The blue icon instantly returns the view to Jerusalem.</p>
             </div>
             <button class="w-full bg-red-600 mt-6 py-3 font-bold rounded" onclick="closeBriefing()">INITIALIZE UPLINK</button>
         </div>
     </div>
 
-    <div id="hud-top">
-        <div class="hud-card">
-            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Secure Uplink</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">6102</span> OPS ACTIVE</div>
+    <div id="map-container">
+        <div id="hud-top">
+            <div class="hud-card">
+                <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Secure Uplink</div>
+                <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">6214</span> OPS ACTIVE</div>
+            </div>
+            <div class="hud-card">
+                <input type="text" id="map-search" placeholder="CITY / ZIP / STATE..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-44 py-1 uppercase font-bold">
+            </div>
         </div>
-        <div class="hud-card">
-            <input type="text" id="map-search" placeholder="CITY / ZIP / STATE..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-44 py-1 uppercase font-bold">
+
+        <div id="action-menu">
+            <div class="action-btn" onclick="reportIncident()"><span>📢</span>REPORT<br>INTEL</div>
+            <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>ROCKET<br>STRIKE</div>
+            <button class="action-btn btn-recenter" onclick="recenterMap()"><span>📍</span>RECENTER<br>JERUSALEM</button>
+            <button class="action-btn btn-secondary" onclick="openBriefing()">SITE<br>INSTRUCTIONS</button>
+            <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span>SHARE<br>SITE</div>
+            <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span>MAP<br>MODE</div>
         </div>
+
+        <div id="map"></div>
     </div>
 
-    <div id="action-menu">
-        <div class="action-btn" onclick="reportIncident()"><span>📢</span>REPORT<br>INTEL</div>
-        <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>ROCKET<br>STRIKE</div>
-        <button class="action-btn btn-recenter" onclick="recenterMap()"><span>📍</span>RECENTER<br>JERUSALEM</button>
-        <button class="action-btn btn-secondary" onclick="openBriefing()">SITE<br>INSTRUCTIONS</button>
-        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span>SHARE<br>SITE</div>
-        <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span>MAP<br>MODE</div>
-    </div>
-
-    <div id="map"></div>
-    <div id="ticker-wrap"><div class="ticker-move" id="news-stream">CONNECTING TO GLOBAL FEEDS...</div></div>
+    <div id="ticker-wrap"><div class="ticker-move" id="news-stream">SYNCING GLOBAL INTELLIGENCE... STANDBY FOR SECURE DATA...</div></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const JERUSALEM_COORDS = [31.7683, 35.2137];
 
-        // FIXED: Only one world map allowed, no horizontal repetition
         const map = L.map('map', { 
             zoomControl: false, 
             attributionControl: false,
@@ -134,12 +150,10 @@
             setInterval(decayLogic, 15000);
         }
 
-        function recenterMap() {
-            map.flyTo(JERUSALEM_COORDS, 11, { duration: 2 });
-        }
+        function recenterMap() { map.flyTo(JERUSALEM_COORDS, 11, { duration: 2 }); }
 
         function updateHUD() {
-            document.getElementById('user-count').innerText = (6000 + Math.floor(Math.random() * 400)).toLocaleString();
+            document.getElementById('user-count').innerText = (6200 + Math.floor(Math.random() * 250)).toLocaleString();
             reports.forEach(r => { r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.6 - 0.8))); });
             renderPins();
         }
@@ -153,12 +167,12 @@
         }
 
         function reportIncident() {
-            const name = prompt("Incident Location (City, State, or Zip):");
+            const name = prompt("Enter Sector (City, State, or Zip):");
             if (name) processReport(name, 25, 'risk');
         }
 
         function reportRocket() {
-            const name = prompt("Rocket Impact Location:");
+            const name = prompt("Enter Impact Zone:");
             if (name) processReport(name, 45, 'strike');
         }
 
@@ -168,7 +182,6 @@
                 if (data.length > 0) {
                     const { lat, lon, display_name } = data[0];
                     const shortName = display_name.split(',')[0].toUpperCase();
-                    
                     const existing = reports.find(r => r.name.toLowerCase() === shortName.toLowerCase());
                     if (existing) {
                         existing.risk = Math.min(100, existing.risk + impact);
@@ -179,9 +192,7 @@
                     }
                     map.flyTo([lat, lon], 12);
                     renderPins();
-                } else {
-                    alert("LOCATION NOT FOUND. CHECK SPELLING.");
-                }
+                } else { alert("SECTOR NOT FOUND."); }
             });
         }
 
@@ -210,7 +221,7 @@
         }
 
         function shareSite() {
-            if (navigator.share) navigator.share({ title: 'JSI', text: 'Live Risk Monitor.', url: window.location.href });
+            if (navigator.share) navigator.share({ title: 'JSI', text: 'Tactical Risk Monitor Active.', url: window.location.href });
             else alert("Operational link copied.");
         }
 
@@ -219,7 +230,7 @@
                 const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await res.json();
                 document.getElementById('news-stream').innerText = data.World.map(n => ` [INTEL] ${n.title.toUpperCase()} ••• `).join(""); 
-            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL DATA... "; }
+            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL TACTICAL DATA... "; }
         }
         
         document.getElementById('map-search').addEventListener('keypress', e => { 
