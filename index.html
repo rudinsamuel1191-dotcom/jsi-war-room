@@ -10,18 +10,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #0b0e14; }
+        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; }
+        .blurred { filter: blur(8px); pointer-events: none; }
+
+        /* Sidebar Styling */
         .sidebar {
             position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000;
             background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
             padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
             max-height: 80vh; overflow-y: auto;
         }
-        .info-trigger {
-            position: absolute; top: 15px; right: 15px; cursor: pointer;
-            background: #374151; border-radius: 50%; width: 24px; height: 24px;
-            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;
+
+        /* Disclaimer & Modals */
+        #disclaimer-overlay {
+            position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center;
         }
+        .disclaimer-box {
+            background: #0f172a; border: 2px solid #ef4444; padding: 40px;
+            width: 90%; max-width: 450px; border-radius: 12px; text-align: center;
+        }
+
         #info-modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
@@ -30,26 +39,41 @@
             background: #0f172a; margin: 10% auto; padding: 30px; border: 1px solid #ef4444;
             width: 85%; max-width: 500px; border-radius: 12px; max-height: 70vh; overflow-y: auto;
         }
+
+        /* Elements */
+        .info-trigger { position: absolute; top: 15px; right: 15px; cursor: pointer; background: #374151; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         .section-label { font-size: 10px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
         .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; }
         .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; }
+        
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
         @keyframes ticker { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
         .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
     </style>
 </head>
 <body>
 
+    <div id="disclaimer-overlay">
+        <div class="disclaimer-box">
+            <h1 style="color:#ef4444; font-size: 24px; margin-bottom: 20px;">SECURITY PROTOCOL</h1>
+            <p style="font-size: 14px; color: #d1d5db; margin-bottom: 30px; line-height: 1.6;">
+                The Jewish Safety Index (JSI) is for situational awareness ONLY. Risk percentages are algorithmic estimates. In the event of an immediate threat, contact local law enforcement or emergency services first.
+            </p>
+            <button class="panic-btn" onclick="acceptDisclaimer()">I UNDERSTAND</button>
+        </div>
+    </div>
+
     <div id="info-modal">
         <div class="modal-content">
             <h2 style="color:#ef4444; border-bottom: 1px solid #ef4444; padding-bottom:10px;">OPERATIONAL GUIDE</h2>
             <div style="font-size: 13px; line-height: 1.6; color: #d1d5db; margin-top: 15px;">
-                <p><strong>COMBAT BRIEFING:</strong> Search a location, then tap "Share Intel" to send a situational summary to your contacts.</p>
-                <p><strong>THEATER VIEW:</strong> Switch between Dark Tactical and Street views.</p>
-                <p><strong>FIELD REPORTS:</strong> "!" pins are user-submitted reports.</p>
+                <p><strong>AUTO-INTEL:</strong> News-driven risk markers (70%+).</p>
+                <p><strong>FIELD REPORTS:</strong> "!" markers are user-submitted intel.</p>
+                <p><strong>BRIEFING:</strong> Tap "Share Intel" to send a report to contacts.</p>
             </div>
             <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">Return to Command</button>
         </div>
@@ -82,20 +106,23 @@
     </div>
 
     <div class="ticker-wrap">
-        <div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK... STANDBY...</div>
+        <div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK...</div>
     </div>
 
-    <div id="map"></div>
+    <div id="map" class="blurred"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
-        
         const tacticalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
         const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-        
         let currentLayer = tacticalLayer;
         currentLayer.addTo(map);
+
+        function acceptDisclaimer() {
+            document.getElementById('disclaimer-overlay').style.display = 'none';
+            document.getElementById('map').classList.remove('blurred');
+        }
 
         function toggleMap() {
             if (currentLayer === tacticalLayer) {
@@ -132,21 +159,11 @@
             addPin(lastSearchedLocation.lat, lastSearchedLocation.lon, `${lastSearchedLocation.name} (${document.getElementById('threat-type').value})`, 85, true);
         }
 
-        // SHARE LOGIC
-        async function shareIntel() {
-            if (!lastSearchedLocation) {
-                alert("Please search for a location to generate a briefing.");
-                return;
-            }
-            const briefText = `JSI COMBAT BRIEFING\n------------------\nLOCATION: ${lastSearchedLocation.name}\nTHREAT LEVEL: ${lastRisk}%\nCOORDINATES: ${lastSearchedLocation.lat}, ${lastSearchedLocation.lon}\n\nLIVE INTEL LINK: ${window.location.href}`;
-            
-            if (navigator.share) {
-                navigator.share({ title: 'JSI Combat Briefing', text: briefText });
-            } else {
-                // Fallback for desktop: Copy to clipboard
-                navigator.clipboard.writeText(briefText);
-                alert("Briefing copied to clipboard!");
-            }
+        function shareIntel() {
+            if (!lastSearchedLocation) { alert("Select a location first."); return; }
+            const briefText = `JSI BRIEFING\nLOC: ${lastSearchedLocation.name}\nRISK: ${lastRisk}%\nLINK: ${window.location.href}`;
+            if (navigator.share) { navigator.share({ text: briefText }); }
+            else { navigator.clipboard.writeText(briefText); alert("Briefing Copied."); }
         }
 
         function addPin(lat, lon, name, risk, isManual) {
@@ -167,22 +184,11 @@
             document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
         }
 
-        function triggerPanic() {
-            window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`;
-        }
+        function triggerPanic() { window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`; }
 
         function runAutoScan() {
-            const zones = [
-                { name: "New York", coords: [40.7128, -74.0060] },
-                { name: "Los Angeles", coords: [34.0522, -118.2437] },
-                { name: "London", coords: [51.5074, -0.1278] },
-                { name: "Paris", coords: [48.8566, 2.3522] },
-                { name: "Florida", coords: [27.6648, -81.5158] }
-            ];
-            zones.forEach(z => {
-                const risk = Math.floor(Math.random() * 30) + 60;
-                if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false);
-            });
+            const zones = [{ name: "New York", coords: [40.7128, -74.0060] }, { name: "Los Angeles", coords: [34.0522, -118.2437] }, { name: "London", coords: [51.5074, -0.1278] }, { name: "Paris", coords: [48.8566, 2.3522] }, { name: "Florida", coords: [27.6648, -81.5158] }];
+            zones.forEach(z => { const risk = Math.floor(Math.random() * 30) + 60; if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false); });
         }
 
         runAutoScan();
