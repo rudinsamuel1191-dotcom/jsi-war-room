@@ -10,7 +10,7 @@
         body { background-color: #05070a; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
         
-        /* Identity Gate Overlay - Enhanced Visuals */
+        /* Identity Gate Overlay */
         #access-gate {
             position: fixed; inset: 0; z-index: 9999; 
             background-color: #05070a;
@@ -20,30 +20,34 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 20px; transition: opacity 1.5s ease;
         }
-        .hebrew-text { font-size: 36px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.7); }
+        .hebrew-text { font-size: 32px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; text-shadow: 0 0 15px rgba(255,255,255,0.7); }
         .gate-input {
             background: rgba(255,255,255,0.1); border: none; border-bottom: 3px solid #ef4444;
-            color: #ef4444; font-size: 36px; width: 140px; text-align: center;
+            color: #ef4444; font-size: 32px; width: 120px; text-align: center;
             outline: none; font-weight: bold; margin: 0 10px; border-radius: 4px;
-            backdrop-filter: blur(5px); transition: 0.3s;
+            backdrop-filter: blur(5px);
         }
-        .gate-input:focus { border-color: #10b981; background: rgba(255,255,255,0.15); }
-        .gate-hint { color: #d1d5db; font-size: 11px; margin-top: 50px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
-        /* HUD & UI Elements */
+        /* Instructions Overlay */
+        #briefing-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.97); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(8px); }
+        .briefing-card { background: #0b0e14; border: 1px solid #374151; max-width: 500px; padding: 30px; border-radius: 8px; border-top: 4px solid #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.2); }
+
+        /* HUD & Action Menu */
         #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
         .hud-card { background: rgba(0, 0, 0, 0.85); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; backdrop-filter: blur(5px); }
-        #action-menu { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 15px; }
-        .action-btn { background: #ef4444; color: white; padding: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); cursor: pointer; transition: 0.3s; width: 65px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
-        .btn-strike { background: #f97316; }
-        .btn-secondary { background: #1e293b; border-color: #475569; width: 50px; height: 50px; align-self: flex-end; }
+        #action-menu { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
         
-        /* Ticker */
+        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); cursor: pointer; transition: 0.3s; width: 65px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; }
+        .action-btn span { font-size: 18px; margin-bottom: 4px; }
+        .btn-strike { background: #f97316; border-color: #fff; }
+        .btn-secondary { background: #1e293b; border-color: #475569; width: 65px; height: 65px; border-radius: 10px; font-size: 9px; }
+        
+        /* Slow Ticker */
         #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker-move { white-space: nowrap; animation: ticker 120s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Visuals */
+        /* Pins */
         .impact-ring { border: 2px solid #f97316; border-radius: 50%; background: rgba(249, 115, 22, 0.2); animation: impact 2s ease-out infinite; }
         @keyframes impact { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
         .risk-pin { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
@@ -53,34 +57,44 @@
 <body>
 
     <div id="access-gate">
-        <div class="hebrew-text" dir="rtl">
-            שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off">
+        <div class="hebrew-text" dir="rtl">שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off"></div>
+        <div class="text-xs text-slate-400 mt-4 tracking-widest">VERIFICATION REQUIRED</div>
+    </div>
+
+    <div id="briefing-overlay" onclick="closeBriefing()">
+        <div class="briefing-card" onclick="event.stopPropagation()">
+            <h2 class="text-red-500 font-bold text-xl mb-4 border-b border-slate-800 pb-2 uppercase tracking-tighter">Site Instructions</h2>
+            <div class="text-sm space-y-4 text-slate-300">
+                <p><b class="text-white">DYNAMIC RISK:</b> Risk percentages fluctuate based on real-time news and user reports. If an area remains quiet for 24 hours, the risk level automatically decays.</p>
+                <p><b class="text-white">📢 INTEL:</b> Tap to report anti-semitic activity. This immediately raises the local risk level by <span class="text-red-400">25%</span>.</p>
+                <p><b class="text-white">🚀 STRIKE:</b> Tap to report rocket impacts or sirens. This triggers a tactical alert and spikes risk by <span class="text-orange-400">45%</span>.</p>
+                <p><b class="text-white">PRIORITY VIEW:</b> Locations with risk levels above 80% are permanently visible on the global uplink.</p>
+            </div>
+            <button class="w-full bg-red-600 mt-6 py-3 font-bold rounded hover:bg-red-700 transition" onclick="closeBriefing()">DISMISS</button>
         </div>
-        <div class="gate-hint">Verification Required for Tactical Uplink</div>
     </div>
 
     <div id="hud-top">
         <div class="hud-card">
             <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Uplink Secure</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5681</span> ACTIVE OPS</div>
+            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5681</span> ACTIVE</div>
         </div>
         <div class="hud-card">
-            <input type="text" id="map-search" placeholder="CHECK SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-36 py-1 uppercase font-bold">
+            <input type="text" id="map-search" placeholder="LOCATE SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-32 py-1 uppercase font-bold">
         </div>
     </div>
 
     <div id="action-menu">
-        <div class="action-btn" onclick="reportIncident()"><span>📢</span>INTEL</div>
-        <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>STRIKE</div>
-        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span></div>
-        <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span></div>
+        <div class="action-btn" onclick="reportIncident()"><span>📢</span>REPORT<br>INTEL</div>
+        <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>ROCKET<br>STRIKE</div>
+        <button class="action-btn btn-secondary" onclick="openBriefing()">SITE<br>INSTRUCTIONS</button>
+        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span>SHARE<br>ALERT</div>
+        <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span>MAP<br>MODE</div>
     </div>
 
     <div id="map"></div>
 
-    <div id="ticker-wrap">
-        <div class="ticker-move" id="news-stream">INITIALIZING GLOBAL RISK ANALYSIS... STANDBY...</div>
-    </div>
+    <div id="ticker-wrap"><div class="ticker-move" id="news-stream">SYNCING GLOBAL INTELLIGENCE...</div></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -91,30 +105,25 @@
 
         let reports = [
             { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 96, lastUpdate: Date.now(), type: 'risk' },
-            { id: 2, name: "Tel Aviv", lat: 32.0853, lng: 34.7818, risk: 85, lastUpdate: Date.now(), type: 'risk' }
+            { id: 2, name: "Paris", lat: 48.8566, lng: 2.3522, risk: 85, lastUpdate: Date.now(), type: 'risk' }
         ];
 
-        // Access Gate Logic
         function checkGate(el) {
             if (el.value.trim() === 'אחד') {
                 document.getElementById('access-gate').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('access-gate').style.display = 'none';
-                    initializeSystem();
-                }, 1500);
+                setTimeout(() => { document.getElementById('access-gate').style.display = 'none'; initializeSystem(); }, 1500);
             }
         }
 
+        function openBriefing() { document.getElementById('briefing-overlay').style.display = 'flex'; }
+        function closeBriefing() { document.getElementById('briefing-overlay').style.display = 'none'; }
+
         function initializeSystem() {
-            updateHUD();
-            getNews();
+            updateHUD(); getNews();
             setInterval(updateHUD, 4000);
             setInterval(decayLogic, 15000);
-            // Autofocus search on entry
-            setTimeout(() => document.getElementById('map-search').focus(), 500);
         }
 
-        // HUD & Data Logic
         function updateHUD() {
             document.getElementById('user-count').innerText = (5500 + Math.floor(Math.random() * 600)).toLocaleString();
             reports.forEach(r => { r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.6 - 0.8))); });
@@ -183,7 +192,7 @@
         }
 
         function shareSite() {
-            const text = "⚠️ JSI Live Risk Monitor. Access authorized.";
+            const text = "⚠️ JSI Live Risk Monitor. Access verified.";
             if (navigator.share) navigator.share({ title: 'JSI', text: text, url: window.location.href });
             else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Link Copied."); }
         }
