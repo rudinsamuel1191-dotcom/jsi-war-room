@@ -6,13 +6,14 @@
     <title>JSI | War Room Command</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; }
         .blurred { filter: blur(8px); pointer-events: none; }
 
         /* Overlays */
-        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; pointer-events: none; }
+        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; backdrop-filter: blur(5px); }
         #personnel-count { position: absolute; top: 15px; right: 20px; z-index: 1002; background: rgba(11, 14, 20, 0.8); border: 1px solid #374151; padding: 5px 12px; border-radius: 4px; font-size: 10px; color: #10b981; font-weight: bold; }
 
         .sidebar { position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000; background: rgba(11, 14, 20, 0.9); border: 1px solid #374151; padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; transition: transform 0.4s; }
@@ -22,8 +23,11 @@
         .section-label { font-size: 9px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; margin-top: 15px; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 8px; border: 1px solid #4b5563; border-radius: 4px; font-size: 11px; margin-bottom: 8px; outline: none; }
         .action-btn { background: #1f2937; color: white; width: 100%; padding: 10px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-size: 10px; }
-        .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; margin-top: 10px; }
         
+        /* Emergency Signal Button - New Branding */
+        .signal-btn { background: #ef4444; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #fff; cursor: pointer; margin-top: 10px; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        .signal-btn:active { background: #b91c1c; transform: scale(0.98); }
+
         .history-list { font-size: 10px; color: #9ca3af; margin-top: 5px; max-height: 100px; overflow-y: auto; border-left: 1px solid #ef4444; padding-left: 8px; }
         .history-item { cursor: pointer; padding: 4px 0; border-bottom: 1px solid #1f2937; }
 
@@ -33,7 +37,7 @@
 
         .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
@@ -41,8 +45,8 @@
     <div id="disclaimer-overlay" style="position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center;">
         <div style="background:#0f172a; border:2px solid #ef4444; padding:40px; width:90%; max-width:450px; border-radius:12px; text-align:center;">
             <h1 style="color:#ef4444; font-size:24px; margin-bottom:20px;">SECURITY PROTOCOL</h1>
-            <p style="font-size:14px; color:#d1d5db; margin-bottom:30px;">JSI is for situational awareness ONLY. Risk scores are algorithmic. In an emergency, contact authorities.</p>
-            <button class="panic-btn" onclick="acceptDisclaimer()">I UNDERSTAND</button>
+            <p style="font-size:14px; color:#d1d5db; margin-bottom:30px;">JSI is for situational awareness ONLY. Signal Emergency logs data to the network.</p>
+            <button class="signal-btn" onclick="acceptDisclaimer()">I UNDERSTAND</button>
         </div>
     </div>
 
@@ -60,28 +64,13 @@
         <input type="text" id="search-box" class="input-style" placeholder="Search City/State...">
         <div id="search-history" class="history-list"></div>
 
-        <span class="section-label">Report Intel</span>
-        <select id="threat-type" class="input-style">
-            <option>Physical Threat</option>
-            <option>Protest/Unrest</option>
-            <option>Vandalism</option>
-            <option>Harassment</option>
-        </select>
-        <button class="action-btn" onclick="logFieldReport()">Submit Field Data</button>
-
-        <span class="section-label">Heatmap Palette</span>
-        <select id="heat-palette" class="input-style" onchange="updateHeatmapStyle()">
-            <option value="standard">Standard (Red/Blue)</option>
-            <option value="plasma">Plasma (High Contrast)</option>
-            <option value="monochrome">Ghost (White/Grey)</option>
-        </select>
-        <button class="action-btn" id="heat-toggle-btn" onclick="toggleHeatmap()">🔥 Toggle Heatmap: OFF</button>
-
-        <span class="section-label">Settings</span>
+        <span class="section-label">Operational Settings</span>
+        <button class="action-btn" id="heat-toggle-btn" onclick="toggleHeatmap()">🔥 Heatmap: OFF</button>
         <button class="action-btn" id="audio-toggle" onclick="toggleAudio()">🔊 Audio: ON</button>
-        <button class="action-btn" onclick="shareIntel()">📤 Export Combat Briefing</button>
 
-        <button class="panic-btn" onclick="triggerPanic()">⚠️ Signal Emergency</button>
+        <span class="section-label">Network Transmission</span>
+        <button class="signal-btn" onclick="signalEmergency()">⚠️ SIGNAL EMERGENCY</button>
+        <p style="font-size: 8px; color: #9ca3af; margin-top: 5px; text-align: center;">LOGS DATA & GENERATES INTEL BRIEF</p>
     </div>
 
     <div class="ticker-wrap"><div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK...</div></div>
@@ -94,11 +83,6 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let heatLayer = null, heatData = [], audioEnabled = true;
-        const gradients = {
-            standard: {0.4: 'blue', 0.6: 'lime', 1: 'red'},
-            plasma: {0.2: 'purple', 0.5: 'orange', 1: 'yellow'},
-            monochrome: {0.3: 'grey', 0.7: 'silver', 1: 'white'}
-        };
 
         function updatePersonnelCount() {
             let count = parseInt(document.getElementById('user-count').innerText);
@@ -106,24 +90,43 @@
         }
         setInterval(updatePersonnelCount, 5000);
 
-        function updateHeatmapStyle() {
-            if (heatLayer) {
-                const style = document.getElementById('heat-palette').value;
-                heatLayer.setOptions({ gradient: gradients[style] });
+        function toggleHeatmap() {
+            const btn = document.getElementById('heat-toggle-btn');
+            if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; btn.innerText = "🔥 Heatmap: OFF"; }
+            else { 
+                heatLayer = L.heatLayer(heatData, {radius: 45, blur: 20, max: 1.0}).addTo(map); 
+                btn.innerText = "🔥 Heatmap: ON";
             }
         }
 
-        function toggleHeatmap() {
-            const btn = document.getElementById('heat-toggle-btn');
-            if (heatLayer) {
-                map.removeLayer(heatLayer);
-                heatLayer = null;
-                btn.innerText = "🔥 Toggle Heatmap: OFF";
+        async function signalEmergency() {
+            const pos = map.getCenter();
+            const timestamp = new Date().toLocaleString();
+            const lat = pos.lat.toFixed(5);
+            const lon = pos.lng.toFixed(5);
+
+            // 1. Add High-Risk Pin to Map
+            addPin(lat, lon, "EMERGENCY SIGNAL", 100, true);
+
+            // 2. Play Audio Alert
+            playRadarPing(); playRadarPing(); // Double ping for emergency
+
+            // 3. Create Briefing Data
+            const briefText = `JSI EMERGENCY INTEL\n------------------\nTIME: ${timestamp}\nLOC: ${lat}, ${lon}\nSTATUS: HIGH RISK\n------------------\nReport logged to JSI Global Network.`;
+            
+            // 4. Trigger Social Share
+            if (navigator.share) {
+                navigator.share({
+                    title: 'JSI Tactical Intel',
+                    text: briefText,
+                    url: window.location.href
+                }).catch(() => {
+                    alert("Briefing Copied to Clipboard.\n\n" + briefText);
+                    navigator.clipboard.writeText(briefText);
+                });
             } else {
-                const style = document.getElementById('heat-palette').value;
-                // Added higher radius (40) and lower blur (20) to make "heat" visible even with single pins
-                heatLayer = L.heatLayer(heatData, {radius: 40, blur: 20, max: 1.0, gradient: gradients[style]}).addTo(map);
-                btn.innerText = "🔥 Toggle Heatmap: ON";
+                alert("Briefing Copied to Clipboard.\n\n" + briefText);
+                navigator.clipboard.writeText(briefText);
             }
         }
 
@@ -168,23 +171,18 @@
             document.getElementById('audio-toggle').innerText = audioEnabled ? "🔊 Audio: ON" : "🔇 Audio: OFF";
         }
 
-        function addPin(lat, lon, name, risk, isManual) {
-            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${isManual?'!':risk+'%'}</span>`, iconSize: [35, 35] });
-            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
+        function addPin(lat, lon, name, risk, isEmergency) {
+            const icon = L.divIcon({ 
+                className: 'danger-pin', 
+                html: `<span class="pin-text">${isEmergency?'!':risk+'%'}</span>`, 
+                iconSize: [35, 35] 
+            });
+            const marker = L.marker([lat, lon], { icon: icon }).addTo(map);
+            marker.bindPopup(`<b style="color:black">${isEmergency ? '⚠️ EMERGENCY' : name}</b><br><span style="color:red">Risk: ${risk}%</span>`).openPopup();
             
-            // Critical: Lat/Lon must be numbers for the Heat Layer to read them correctly
             heatData.push([parseFloat(lat), parseFloat(lon), risk / 100]);
-            
-            if (heatLayer) {
-                heatLayer.setLatLngs(heatData);
-                heatLayer.redraw();
-            }
-            playRadarPing();
-        }
-
-        function logFieldReport() {
-            const c = map.getCenter();
-            addPin(c.lat, c.lng, `FIELD REPORT (${document.getElementById('threat-type').value})`, 85, true);
+            if (heatLayer) { heatLayer.setLatLngs(heatData); heatLayer.redraw(); }
+            if (!isEmergency) playRadarPing();
         }
 
         function toggleSidebar(e) {
@@ -204,7 +202,9 @@
             document.getElementById('disclaimer-overlay').style.display = 'none';
             document.getElementById('map').classList.remove('blurred');
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            runAutoScan();
+            // Start Auto Scan
+            const zones = [{ name: "Sector 1", coords: [40.7, -74] }, { name: "Sector 2", coords: [34, -118] }];
+            zones.forEach((z, i) => setTimeout(() => addPin(z.coords[0], z.coords[1], z.name, 70, false), i * 1500));
         }
 
         async function updateFeed() {
@@ -214,13 +214,6 @@
                 document.getElementById('news-ticker').innerText = data.World.slice(0, 10).map(i => `[LIVE] ${i.title.toUpperCase()} --- `).join("");
             } catch (err) { document.getElementById('news-ticker').innerText = "[SYSTEM] MONITORING CHANNELS..."; }
             document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
-        }
-
-        function triggerPanic() { window.location.href = `sms:911?&body=JSI EMERGENCY: ${window.location.href}`; }
-
-        function runAutoScan() {
-            const zones = [{ name: "New York", coords: [40.7128, -74.0060] }, { name: "Los Angeles", coords: [34.0522, -118.2437] }, { name: "London", coords: [51.5074, -0.1278] }, { name: "Paris", coords: [48.8566, 2.3522] }];
-            zones.forEach((z, i) => setTimeout(() => addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), 75, false), i * 1000));
         }
 
         updateFeed(); setInterval(updateFeed, 300000);
