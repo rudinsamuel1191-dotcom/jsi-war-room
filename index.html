@@ -7,44 +7,39 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #05070a; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #0b0e14; }
+        body { background-color: #000000; margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
+        #map { height: 100vh; width: 100%; background: #000000; }
         
-        /* FIRST SCREEN: Identity Gate with Western Wall Backdrop */
+        /* FIRST SCREEN: Identity Gate - Pure Black */
         #access-gate {
             position: fixed; inset: 0; z-index: 9999; 
-            background-color: #05070a;
-            /* High-fidelity visualization of the Kotel and Beis Hamikdash */
-            background-image: linear-gradient(to bottom, rgba(5, 7, 10, 0.3), rgba(5, 7, 10, 0.85)), 
-                              url('https://i.imgur.com/kS5x87J.jpeg');
-            background-size: cover; background-position: center;
+            background: #000000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px; transition: opacity 1.5s ease;
+            text-align: center; padding: 20px; transition: opacity 1s ease;
         }
-        .hebrew-text { font-size: 34px; font-weight: bold; margin-bottom: 35px; letter-spacing: 1px; text-shadow: 0 0 20px rgba(0,0,0,0.9); }
+        .hebrew-text { font-size: 34px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; color: #ffffff; }
         .gate-input {
-            background: rgba(255,255,255,0.1); border: none; border-bottom: 3px solid #ef4444;
+            background: transparent; border: none; border-bottom: 3px solid #ef4444;
             color: #ef4444; font-size: 34px; width: 130px; text-align: center;
-            outline: none; font-weight: bold; margin: 0 10px; border-radius: 4px;
-            backdrop-filter: blur(5px);
+            outline: none; font-weight: bold; margin: 0 10px;
         }
 
         /* Instructions Overlay */
-        #briefing-overlay { position: fixed; inset: 0; background: rgba(5, 7, 10, 0.98); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
-        .briefing-card { background: #0b0e14; border: 1px solid #374151; max-width: 500px; padding: 30px; border-radius: 8px; border-top: 4px solid #ef4444; box-shadow: 0 0 40px rgba(239, 68, 68, 0.2); }
+        #briefing-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 9000; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
+        .briefing-card { background: #0a0a0a; border: 1px solid #333; max-width: 500px; padding: 30px; border-radius: 4px; border-top: 4px solid #ef4444; }
 
         /* HUD & Action Menu */
         #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
-        .hud-card { background: rgba(0, 0, 0, 0.85); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; backdrop-filter: blur(5px); }
+        .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; }
         #action-menu { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
         
-        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); cursor: pointer; transition: 0.3s; width: 68px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1.1; }
+        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 68px; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1.1; }
         .btn-strike { background: #f97316; }
-        .btn-secondary { background: #1e293b; border-color: #475569; width: 68px; height: 68px; border-radius: 12px; font-size: 9px; }
+        .btn-secondary { background: #111; border-color: #444; width: 68px; height: 68px; border-radius: 8px; font-size: 9px; }
         
         /* Slow Ticker */
-        #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.95); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 130s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; letter-spacing: 0.5px; }
+        #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: #000; border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
+        .ticker-move { white-space: nowrap; animation: ticker 130s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
         /* Tactical Pins */
@@ -60,29 +55,29 @@
         <div class="hebrew-text" dir="rtl">
             שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off">
         </div>
-        <div class="text-xs text-white/60 mt-4 tracking-[0.3em] font-bold">IDENTITY VERIFICATION REQUIRED</div>
+        <div class="text-xs text-slate-500 mt-4 tracking-[0.4em] font-bold">TACTICAL ACCESS REQUIRED</div>
     </div>
 
     <div id="briefing-overlay" onclick="closeBriefing()">
         <div class="briefing-card" onclick="event.stopPropagation()">
             <h2 class="text-red-500 font-bold text-xl mb-4 border-b border-slate-800 pb-2 uppercase tracking-widest">Site Instructions</h2>
             <div class="text-sm space-y-4 text-slate-300">
-                <p><b class="text-white">RISK LOGIC:</b> Risk fluctuates in real-time. If no reports are filed within 24 hours, the percentage for that location automatically drops (Decay Engine).</p>
-                <p><b class="text-white">📢 INTEL:</b> Report anti-semitic incidents to immediately increase local risk by <span class="text-red-400">25%</span>.</p>
-                <p><b class="text-white">🚀 STRIKE:</b> Report rocket impacts or sirens to trigger a kinetic alert and spike risk by <span class="text-orange-400">45%</span>.</p>
-                <p><b class="text-white">80% THRESHOLD:</b> High-danger areas (80%+) are prioritized and always visible on the global map.</p>
+                <p><b class="text-white">DYNAMIC RISK:</b> Risk levels are live. If an area remains quiet for 24 hours, the percentage drops (Decay Engine).</p>
+                <p><b class="text-white">📢 INTEL:</b> Report anti-semitic activity to increase local risk by <span class="text-red-400">25%</span>.</p>
+                <p><b class="text-white">🚀 STRIKE:</b> Report rocket impacts to trigger alerts and spike risk by <span class="text-orange-400">45%</span>.</p>
+                <p><b class="text-white">HIGH ALERT:</b> Zones above 80% risk are permanently prioritized on the map.</p>
             </div>
-            <button class="w-full bg-red-600 mt-6 py-3 font-bold rounded hover:bg-red-700 transition" onclick="closeBriefing()">CONFIRM & EXIT</button>
+            <button class="w-full bg-red-600 mt-6 py-3 font-bold rounded" onclick="closeBriefing()">ACCESS UPLINK</button>
         </div>
     </div>
 
     <div id="hud-top">
         <div class="hud-card">
-            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Secure Uplink</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5829</span> OPS ACTIVE</div>
+            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Secure Link</div>
+            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5942</span> ACTIVE</div>
         </div>
         <div class="hud-card">
-            <input type="text" id="map-search" placeholder="CHECK AREA..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-32 py-1 uppercase font-bold">
+            <input type="text" id="map-search" placeholder="SEARCH AREA..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-32 py-1 uppercase font-bold">
         </div>
     </div>
 
@@ -90,13 +85,13 @@
         <div class="action-btn" onclick="reportIncident()"><span>📢</span>REPORT<br>INTEL</div>
         <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>ROCKET<br>STRIKE</div>
         <button class="action-btn btn-secondary" onclick="openBriefing()">SITE<br>INSTRUCTIONS</button>
-        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span>SHARE<br>ALERT</div>
+        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span>SHARE<br>SITE</div>
         <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span>MAP<br>MODE</div>
     </div>
 
     <div id="map"></div>
 
-    <div id="ticker-wrap"><div class="ticker-move" id="news-stream">ESTABLISHING GLOBAL NEWS UPLINK... STANDBY FOR INTEL...</div></div>
+    <div id="ticker-wrap"><div class="ticker-move" id="news-stream">CONNECTING TO GLOBAL FEEDS... STANDBY...</div></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
@@ -107,13 +102,13 @@
 
         let reports = [
             { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 96, lastUpdate: Date.now(), type: 'risk' },
-            { id: 2, name: "London", lat: 51.5074, lng: -0.1278, risk: 82, lastUpdate: Date.now(), type: 'risk' }
+            { id: 2, name: "New York", lat: 40.7128, lng: -74.0060, risk: 84, lastUpdate: Date.now(), type: 'risk' }
         ];
 
         function checkGate(el) {
             if (el.value.trim() === 'אחד') {
                 document.getElementById('access-gate').style.opacity = '0';
-                setTimeout(() => { document.getElementById('access-gate').style.display = 'none'; initializeSystem(); }, 1500);
+                setTimeout(() => { document.getElementById('access-gate').style.display = 'none'; initializeSystem(); }, 1000);
             }
         }
 
@@ -127,7 +122,7 @@
         }
 
         function updateHUD() {
-            document.getElementById('user-count').innerText = (5700 + Math.floor(Math.random() * 500)).toLocaleString();
+            document.getElementById('user-count').innerText = (5800 + Math.floor(Math.random() * 400)).toLocaleString();
             reports.forEach(r => { r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.6 - 0.8))); });
             renderPins();
         }
@@ -194,17 +189,17 @@
         }
 
         function shareSite() {
-            const text = "⚠️ JSI Tactical Risk Monitor.";
+            const text = "⚠️ JSI Live Risk Monitor.";
             if (navigator.share) navigator.share({ title: 'JSI', text: text, url: window.location.href });
-            else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Operational link copied."); }
+            else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Link copied."); }
         }
 
         async function getNews() {
             try {
                 const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await res.json();
-                document.getElementById('news-stream').innerText = data.World.map(n => ` [LIVE REPORT] ${n.title.toUpperCase()} ••• `).join(""); 
-            } catch (e) { document.getElementById('news-stream').innerText = "MONITORING GLOBAL INTEL FEEDS... "; }
+                document.getElementById('news-stream').innerText = data.World.map(n => ` [REPORT] ${n.title.toUpperCase()} ••• `).join(""); 
+            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL DATA... "; }
         }
         
         document.getElementById('map-search').addEventListener('keypress', e => { if (e.key === 'Enter') processReport(e.target.value, 0, 'risk'); });
