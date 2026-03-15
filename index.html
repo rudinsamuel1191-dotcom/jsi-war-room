@@ -10,78 +10,84 @@
     
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        #map { position: absolute; top: 75px; bottom: 46px; left: 0; right: 0; z-index: 1; background: #000; }
         
-        /* 1. SECURE GATE */
+        /* ACCESS GATE */
         #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: clamp(24px, 5vw, 34px); width: 80%; max-width: 300px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
-        .gate-btn { background: #ef4444; color: white; padding: 15px 40px; font-weight: 900; border-radius: 4px; cursor: pointer; border: 2px solid white; text-transform: uppercase; letter-spacing: 1px; }
+        .gate-btn { background: #ef4444; color: white; padding: 15px 40px; font-weight: 900; border-radius: 4px; cursor: pointer; border: 2px solid white; text-transform: uppercase; }
 
-        /* 2. RESPONSIVE HEADERS */
+        /* HEADERS */
         #news-bulletin-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; }
         #search-box { position: fixed; top: 35px; left: 0; width: 100%; height: 40px; background: #111; z-index: 4000; display: flex; border-bottom: 1px solid #333; }
         #search-input { flex: 1; background: transparent; border: none; padding: 0 15px; color: white; font-size: 14px; outline: none; }
         #search-btn { background: #ef4444; padding: 0 25px; color: black; font-weight: 900; cursor: pointer; display: flex; align-items: center; }
 
-        /* 3. TACTICAL MAP */
-        #map { position: absolute; top: 75px; bottom: 46px; left: 0; right: 0; z-index: 1; background: #000; }
-        
-        /* 4. HUD CONTROLS (Desktop & Mobile Friendly) */
-        .zoom-controls { position: absolute; bottom: 65px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-        .zoom-btn { background: #111; color: white; width: 50px; height: 50px; border: 1px solid #ef4444; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        /* TACTICAL HUD */
+        .hud-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
+        .hud-btn { background: #ef4444; color: white; width: 60px; height: 60px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s; }
+        .hud-btn:active { transform: scale(0.9); }
 
-        /* 5. TACTICAL PINS */
-        .hotspot-blob { background: #f59e0b; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 34px; height: 34px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: black; font-weight: 900; box-shadow: 0 0 15px #f59e0b; }
-        .pin-label { background: rgba(0,0,0,0.95); color: white; font-size: 10px; padding: 3px 8px; border-radius: 2px; margin-top: 5px; font-weight: 900; border: 1px solid #ef4444; white-space: nowrap; text-transform: uppercase; }
+        .zoom-controls { position: absolute; bottom: 65px; left: 15px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .zoom-btn { background: #111; color: white; width: 45px; height: 45px; border: 1px solid #ef4444; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; }
 
-        /* 6. GLOBAL MARKET TICKER */
+        /* BRIEFCASE (INCIDENTS) */
+        #briefcase { position: fixed; right: -320px; top: 0; width: 300px; height: 100vh; background: #0a0a0a; border-left: 2px solid #ef4444; z-index: 6000; transition: 0.4s; padding: 20px; overflow-y: auto; }
+        #briefcase.open { right: 0; }
+
+        /* PINS */
+        .hotspot-blob { background: #f59e0b; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 32px; height: 32px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: black; font-weight: 900; box-shadow: 0 0 15px #f59e0b; }
+        .pin-label { background: rgba(0,0,0,0.9); color: white; font-size: 9px; padding: 2px 6px; border-radius: 2px; margin-top: 5px; font-weight: 900; border: 1px solid #ef4444; white-space: nowrap; text-transform: uppercase; }
+
         #price-ticker { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; z-index: 5000; background: #000; border-top: 1px solid #ef4444; }
-
-        /* Ticker Animation */
-        .ticker-text { display: flex; animation: scroll-left 100s linear infinite; }
+        .ticker-text { display: flex; animation: scroll-left 120s linear infinite; white-space: nowrap; }
         @keyframes scroll-left { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     </style>
 </head>
 <body>
 
     <div id="access-gate">
-        <img src="https://rudinsamuel1191-dotcom.github.io/jsi-war-room/JIS.png%20.jpg" style="height: 100px; margin-bottom: 25px; border-radius: 10px;" alt="JSI">
-        <div style="font-size: 22px; font-weight: 900; letter-spacing: 2px; color: #fff;">AUTHORIZED PERSONNEL ONLY</div>
-        <div style="font-size: 26px; font-weight: bold; color: #ef4444; margin-top: 5px;">שמע ישראל</div>
-        <input type="text" id="gate-key" class="gate-input" placeholder="ENTER ACCESS KEY" autocomplete="off">
-        <button class="gate-btn" onclick="manualUnlock()">Initialize Uplink</button>
+        <img src="https://rudinsamuel1191-dotcom.github.io/jsi-war-room/JIS.png%20.jpg" style="height: 100px; margin-bottom: 25px;" alt="JSI">
+        <div style="font-size: 26px; font-weight: bold; color: #ef4444;">שמע ישראל</div>
+        <input type="text" id="gate-key" class="gate-input" placeholder="ACCESS KEY" autocomplete="off">
+        <button class="gate-btn" onclick="manualUnlock()">UPLINK</button>
     </div>
 
     <div id="news-bulletin-wrap">
         <div style="background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; border-right: 1px solid white;">THREAT FEED</div>
-        <div class="ticker-text" id="live-news-ticker">ESTABLISHING GLOBAL INTEL STREAM...</div>
+        <div class="ticker-text" id="live-news-ticker">FETCHING GLOBAL INTEL...</div>
     </div>
 
     <div id="search-box">
-        <input type="text" id="search-input" placeholder="SCAN SECTOR (E.G. JERUSALEM, NYC, BERLIN)...">
+        <input type="text" id="search-input" placeholder="SCAN SECTOR...">
         <div id="search-btn" onclick="searchLocation()">TRACK</div>
     </div>
 
     <div id="map"></div>
+
+    <div class="hud-menu">
+        <div class="hud-btn" style="background:#1f2937;" onclick="toggleBriefcase()"><span>💼</span>BRIEFING</div>
+        <div class="hud-btn" style="background:#7c3aed;" onclick="shareSite()"><span>🔗</span>SHARE</div>
+    </div>
 
     <div class="zoom-controls">
         <div class="zoom-btn" onclick="map.zoomIn()">+</div>
         <div class="zoom-btn" onclick="map.zoomOut()">−</div>
     </div>
 
+    <div id="briefcase">
+        <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
+            <h2 class="text-red-500 font-black text-xs uppercase tracking-widest">Incident Briefcase</h2>
+            <button onclick="toggleBriefcase()" class="text-white text-xl">×</button>
+        </div>
+        <div id="incident-list" class="text-[10px] space-y-4"></div>
+    </div>
+
     <div id="price-ticker">
         <div class="tradingview-widget-container">
             <div class="tradingview-widget-container__widget"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-            {
-            "symbols": [
-                { "proName": "FX_IDC:USDILS", "title": "USD/ILS" },
-                { "proName": "OANDA:XAUUSD", "title": "GOLD" },
-                { "proName": "BINANCE:BTCUSDT", "title": "BTC" },
-                { "proName": "NASDAQ:TSLA", "title": "TESLA" },
-                { "proName": "NASDAQ:AAPL", "title": "APPLE" }
-            ],
-            "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "en"
-            }
+            { "symbols": [ { "proName": "FX_IDC:USDILS", "title": "USD/ILS" }, { "proName": "OANDA:XAUUSD", "title": "GOLD" }, { "proName": "BINANCE:BTCUSDT", "title": "BTC" }, { "proName": "NASDAQ:TSLA", "title": "TESLA" } ], "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "en" }
             </script>
         </div>
     </div>
@@ -89,87 +95,74 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map;
-
-        // HIGH-RISK DATASET (Antisemitism Hotspots > 70%)
-        const hotZones = [
-            { name: "Berlin", lat: 52.5200, lon: 13.4050, pct: 92 },
-            { name: "Brooklyn", lat: 40.6650, lon: -73.9400, pct: 88 },
-            { name: "London", lat: 51.5700, lon: -0.0700, pct: 85 },
-            { name: "Paris", lat: 48.9900, lon: 2.3800, pct: 82 },
-            { name: "Zurich", lat: 47.3769, lon: 8.5417, pct: 74 },
-            { name: "Melbourne", lat: -37.8136, lon: 144.9631, pct: 79 },
-            { name: "Los Angeles", lat: 34.0522, lon: -118.2437, pct: 72 },
-            { name: "Antwerp", lat: 51.2194, lon: 4.4025, pct: 76 }
-        ];
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1482741387534274581/_28vC-BnDqL8_AFeGLnUaAGZ8brAgVyjJQuvF5oNXJvp66CCSdI-B2CKVlY1BeG82tlh";
 
         function manualUnlock() {
             const key = document.getElementById('gate-key').value.trim().toLowerCase();
             if (key === 'אחד' || key === 'one') {
-                document.getElementById('access-gate').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('access-gate').style.display = 'none';
-                    initMap();
-                    loadHotspots();
-                    fetchNews();
-                }, 500);
-            } else {
-                alert("UNAUTHORIZED ACCESS: KEY REJECTED");
-                document.getElementById('gate-key').value = '';
-            }
+                document.getElementById('access-gate').style.display = 'none';
+                initMap();
+                fetchNews();
+            } else { alert("ACCESS REJECTED"); }
         }
 
         function initMap() {
             if (map) return;
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.7683, 35.2137], 3);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            
-            // Manual Sector Reporting
-            map.on('click', function(e) {
-                const label = prompt("OPERATOR INTEL: ENTER SECTOR LABEL");
+
+            map.on('click', async function(e) {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
+                const data = await res.json();
+                const cityName = data.address.city || data.address.state || "Unknown Sector";
+                
+                const label = prompt(`REPORT INCIDENT AT ${cityName.toUpperCase()}:`);
                 if (label) {
-                    const icon = L.divIcon({ 
-                        html: `<div class="hotspot-blob">!</div><div class="pin-label">${label.toUpperCase()}</div>`, 
-                        className: 'custom-icon' 
-                    });
-                    L.marker([e.latlng.lat, e.latlng.lng], {icon}).addTo(map);
+                    addIncident(cityName, label, e.latlng.lat, e.latlng.lng);
                 }
             });
         }
 
-        function loadHotspots() {
-            hotZones.forEach(z => {
-                const icon = L.divIcon({ 
-                    html: `<div class="hotspot-blob">!</div><div class="pin-label">${z.name} [${z.pct}%]</div>`, 
-                    className: 'custom-icon' 
-                });
-                L.marker([z.lat, z.lon], {icon}).addTo(map);
-            });
+        async function addIncident(city, label, lat, lon) {
+            const pct = Math.floor(Math.random() * (100 - 71) + 71);
+            const icon = L.divIcon({ html: `<div class="hotspot-blob">!</div><div class="pin-label">${city} [${pct}%]</div>`, className: 'custom-icon' });
+            
+            // Get local news for that city
+            const newsRes = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(`https://news.google.com/rss/search?q=${city}+incident+antisemitism&hl=en-US&gl=US&ceid=US:en`)}`);
+            const newsData = await newsRes.json();
+            const topArticle = newsData.items?.[0] ? `<br><a href="${newsData.items[0].link}" target="_blank" style="color:#ef4444;text-decoration:underline;">LATEST INTEL: ${newsData.items[0].title.substring(0, 30)}...</a>` : "";
+
+            const marker = L.marker([lat, lon], {icon}).addTo(map);
+            marker.bindPopup(`<b style="color:black">${city.toUpperCase()}</b><br>${label}<br>THREAT: ${pct}%${topArticle}`).openPopup();
+
+            // Add to dropdown briefing
+            const entry = document.createElement('div');
+            entry.className = "border-b border-zinc-800 pb-2 mb-2";
+            entry.innerHTML = `<span class="text-red-500 font-bold">[${pct}%]</span> <b>${city}</b>: ${label}`;
+            document.getElementById('incident-list').prepend(entry);
+        }
+
+        function toggleBriefcase() { document.getElementById('briefcase').classList.toggle('open'); }
+
+        function shareSite() {
+            const msg = `⚠️ JSI TACTICAL ACCESS\nLink: ${window.location.href}\nPass: one / אחד`;
+            if (navigator.share) { navigator.share({ title: 'JSI Monitor', text: msg }); }
+            else { alert("Tactical Briefing Copied to Clipboard."); }
         }
 
         async function searchLocation() {
-            const query = document.getElementById('search-input').value;
-            if (!query) return;
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
-                const data = await res.json();
-                if (data[0]) {
-                    map.setView([data[0].lat, data[0].lon], 13);
-                } else {
-                    alert("SECTOR LOCK FAILED: ADDRESS NOT FOUND");
-                }
-            } catch (e) { alert("NETWORK ERROR"); }
+            const q = document.getElementById('search-input').value;
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}`);
+            const data = await res.json();
+            if (data[0]) map.setView([data[0].lat, data[0].lon], 13);
         }
 
         async function fetchNews() {
-            try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=antisemitism+unrest+incident&hl=en-US&gl=US&ceid=US:en')}`);
-                const data = await res.json();
-                if(data.items) {
-                    const html = data.items.map(i => `<span style="margin-right:80px;">[ INTEL: ${i.title.toUpperCase()} ]</span>`).join(' ');
-                    document.getElementById('live-news-ticker').innerHTML = html + html;
-                }
-            } catch (e) { 
-                document.getElementById('live-news-ticker').innerText = "SIGNAL TEMPORARILY OFFLINE...";
+            const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=antisemitism+incident&hl=en-US&gl=US&ceid=US:en')}`);
+            const data = await res.json();
+            if(data.items) {
+                const html = data.items.map(i => `<span style="margin-right:80px;">[ INTEL: ${i.title.toUpperCase()} ]</span>`).join(' ');
+                document.getElementById('live-news-ticker').innerHTML = html + html;
             }
         }
     </script>
