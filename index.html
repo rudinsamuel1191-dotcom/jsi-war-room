@@ -3,220 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JSI | War Room Command</title>
+    <title>JSI | Tactical Ops</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; }
-        .blurred { filter: blur(8px); pointer-events: none; }
+        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.8s ease; }
+        .blurred { filter: blur(12px) grayscale(0.5); pointer-events: none; }
 
-        /* Overlays */
-        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; backdrop-filter: blur(5px); }
-        #personnel-count { position: absolute; top: 15px; right: 20px; z-index: 1002; background: rgba(11, 14, 20, 0.8); border: 1px solid #374151; padding: 5px 12px; border-radius: 4px; font-size: 10px; color: #10b981; font-weight: bold; }
+        /* Tactical HUD */
+        .hud-overlay { position: absolute; z-index: 1002; pointer-events: none; transition: opacity 0.3s; }
+        #coords-display { top: 15px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid #ef4444; padding: 4px 12px; border-radius: 20px; font-size: 10px; color: #ef4444; letter-spacing: 1px; }
+        #personnel-count { top: 15px; right: 20px; background: rgba(0,0,0,0.85); border: 1px solid #10b981; padding: 4px 10px; border-radius: 4px; font-size: 9px; color: #10b981; }
 
-        .sidebar { position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000; background: rgba(11, 14, 20, 0.9); border: 1px solid #374151; padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; transition: transform 0.4s; }
-        .sidebar.minimized { transform: translateX(-360px); opacity: 0; pointer-events: none; }
-        .menu-toggle { position: absolute; top: 40px; left: 20px; z-index: 1001; background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 1px solid #fff; }
-
-        .section-label { font-size: 9px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; margin-top: 15px; }
-        .input-style { background: #1f2937; color: white; width: 100%; padding: 8px; border: 1px solid #4b5563; border-radius: 4px; font-size: 11px; margin-bottom: 8px; outline: none; }
-        .action-btn { background: #1f2937; color: white; width: 100%; padding: 10px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-size: 10px; }
+        /* Sidebar */
+        .sidebar { 
+            position: absolute; top: 40px; left: 20px; width: 300px; z-index: 1000; 
+            background: rgba(11, 14, 20, 0.95); border: 1px solid #374151; padding: 18px; 
+            border-radius: 4px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar.minimized { transform: translateX(-340px); opacity: 0; }
         
-        /* Emergency Signal Button - New Branding */
-        .signal-btn { background: #ef4444; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #fff; cursor: pointer; margin-top: 10px; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
-        .signal-btn:active { background: #b91c1c; transform: scale(0.98); }
+        .menu-toggle { 
+            position: absolute; top: 40px; left: 20px; z-index: 1001; 
+            background: #ef4444; color: white; width: 42px; height: 42px; 
+            border-radius: 4px; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; border: 1px solid #fff;
+        }
 
-        .history-list { font-size: 10px; color: #9ca3af; margin-top: 5px; max-height: 100px; overflow-y: auto; border-left: 1px solid #ef4444; padding-left: 8px; }
-        .history-item { cursor: pointer; padding: 4px 0; border-bottom: 1px solid #1f2937; }
+        /* Buttons & Inputs */
+        .label { font-size: 9px; color: #ef4444; font-weight: 800; margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .btn-tac { background: #1e293b; border: 1px solid #475569; color: #f1f5f9; width: 100%; padding: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; border-radius: 2px; cursor: pointer; margin-bottom: 8px; transition: 0.2s; }
+        .btn-signal { background: #ef4444; border: 1px solid #fff; color: white; width: 100%; padding: 14px; font-weight: 900; text-transform: uppercase; border-radius: 2px; cursor: pointer; margin-top: 5px; }
 
-        .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
-        @keyframes ticker { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        /* Manual Overlay */
+        #manual-overlay { position: fixed; inset: 0; z-index: 6000; background: rgba(5,7,10,0.95); display: none; align-items: center; justify-content: center; padding: 20px; }
+        .manual-card { background: #0b0e14; border: 1px solid #374151; max-width: 500px; padding: 30px; border-radius: 8px; position: relative; }
+        .benefit-tag { background: #1e293b; color: #10b981; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
-        .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); animation: pulse 2s infinite; }
-        .pin-text { transform: rotate(-45deg); }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .ticker-bar { position: absolute; bottom: 0; width: 100%; height: 35px; background: rgba(0,0,0,0.9); border-top: 1px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
+        .ticker-text { white-space: nowrap; animation: slide 60s linear infinite; color: #ef4444; font-size: 12px; font-weight: bold; }
+        @keyframes slide { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+        .danger-pin { background: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); animation: pulse 2s infinite; }
+        .pin-inner { transform: rotate(-45deg); font-size: 10px; font-weight: bold; color: white; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
 
-    <div id="disclaimer-overlay" style="position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center;">
-        <div style="background:#0f172a; border:2px solid #ef4444; padding:40px; width:90%; max-width:450px; border-radius:12px; text-align:center;">
-            <h1 style="color:#ef4444; font-size:24px; margin-bottom:20px;">SECURITY PROTOCOL</h1>
-            <p style="font-size:14px; color:#d1d5db; margin-bottom:30px;">JSI is for situational awareness ONLY. Signal Emergency logs data to the network.</p>
-            <button class="signal-btn" onclick="acceptDisclaimer()">I UNDERSTAND</button>
+    <div id="boot-overlay" style="position:fixed; z-index:5000; inset:0; background:#05070a; display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center; border: 1px solid #ef4444; padding: 40px; background: #0b0e14;">
+            <h2 style="color:#ef4444; letter-spacing:4px; font-size:20px; margin-bottom:10px;">SYSTEM BOOT</h2>
+            <p style="color:#64748b; font-size:11px; margin-bottom:25px;">JSI Tactical Interface: Authorization Required</p>
+            <button class="btn-signal" style="width:200px;" onclick="initializeSystem()">INITIALIZE</button>
         </div>
     </div>
 
-    <div id="coords-display">LAT: 0.00000 | LON: 0.00000</div>
-    <div id="personnel-count">🛰️ ACTIVE PERSONNEL: <span id="user-count">421</span></div>
+    <div id="manual-overlay">
+        <div class="manual-card">
+            <h2 style="color:#ef4444; font-size:22px; margin-bottom:15px;">FIELD OPERATIVE GUIDE</h2>
+            
+            <div class="mb-4">
+                <span class="benefit-tag">BENEFIT</span>
+                <p style="font-size:12px; color:#d1d5db; margin-top:5px;">JSI turns local reports into global awareness. By signaling intel, you help others avoid high-risk zones in real-time.</p>
+            </div>
 
-    <div id="menu-btn" class="menu-toggle" style="display:none;" onclick="toggleSidebar(event)">☰</div>
+            <div style="font-size:11px; color:#9ca3af; line-height:1.6;">
+                <b style="color:white;">1. ACQUIRE TARGETS:</b> Use the search bar to find any city or sector. <br>
+                <b style="color:white;">2. VISUALIZE RISK:</b> Toggle 🔥 HEAT to see threat clusters and 🌗 MODE for visibility. <br>
+                <b style="color:white;">3. SIGNAL INTEL:</b> Click ⚠️ SIGNAL to log an emergency and share the briefing to social media.
+            </div>
 
-    <div id="main-sidebar" class="sidebar">
-        <div style="position:absolute; top:15px; right:15px; cursor:pointer; color:#ef4444; font-weight:bold;" onclick="toggleSidebar(event)">✕</div>
-        <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
-        <p id="status-time" style="color: #9ca3af; font-size: 9px; margin-bottom: 10px;">SYSTEM ACTIVE</p>
-        
-        <span class="section-label">Target Acquisition</span>
-        <input type="text" id="search-box" class="input-style" placeholder="Search City/State...">
-        <div id="search-history" class="history-list"></div>
-
-        <span class="section-label">Operational Settings</span>
-        <button class="action-btn" id="heat-toggle-btn" onclick="toggleHeatmap()">🔥 Heatmap: OFF</button>
-        <button class="action-btn" id="audio-toggle" onclick="toggleAudio()">🔊 Audio: ON</button>
-
-        <span class="section-label">Network Transmission</span>
-        <button class="signal-btn" onclick="signalEmergency()">⚠️ SIGNAL EMERGENCY</button>
-        <p style="font-size: 8px; color: #9ca3af; margin-top: 5px; text-align: center;">LOGS DATA & GENERATES INTEL BRIEF</p>
+            <button class="btn-signal" style="margin-top:25px;" onclick="closeManual()">CONFIRM TRAINING</button>
+        </div>
     </div>
 
-    <div class="ticker-wrap"><div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK...</div></div>
+    <div id="coords-display" class="hud-overlay">LAT: 0.00000 | LON: 0.00000</div>
+    <div id="personnel-count" class="hud-overlay">🛰️ NETWORK: <span id="u-count">421</span></div>
+
+    <div id="menu-btn" class="menu-toggle" style="display:none;" onclick="toggleUI(event)">☰</div>
+
+    <div id="sidebar" class="sidebar">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h1 style="color:#ef4444; font-size:18px; letter-spacing:2px; margin:0;">JSI INTEL</h1>
+            <span onclick="toggleUI(event)" style="cursor:pointer; color:#475569;">✕</span>
+        </div>
+        
+        <span class="label">Target Area</span>
+        <input type="text" id="search" style="background:#0f172a; border:1px solid #334155; color:#fff; width:100%; padding:8px; font-size:11px; margin-bottom:12px;" placeholder="Search Sector...">
+        
+        <span class="label">Map Systems</span>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+            <button class="btn-tac" onclick="toggleMapMode()">🌗 MODE</button>
+            <button class="btn-tac" id="h-btn" onclick="toggleHeat()">🔥 HEAT</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+            <button class="btn-tac" onclick="screenshotMode()">📸 VIEW</button>
+            <button class="btn-tac" onclick="openManual()">📖 HELP</button>
+        </div>
+
+        <span class="label">Network Signal</span>
+        <button class="btn-signal" onclick="signalIntel()">⚠️ SIGNAL EMERGENCY</button>
+        
+        <div id="log" class="mt-4 pt-3 border-t border-slate-800">
+            <span class="label" style="font-size:8px;">Activity Log</span>
+        </div>
+    </div>
+
+    <div class="ticker-bar"><div id="ticker" class="ticker-text">CONNECTING TO GLOBAL INTELLIGENCE...</div></div>
     <div id="map" class="blurred"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     <script>
-        const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        const map = L.map('map', { zoomControl: false }).setView([20, 0], 2);
+        const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        const lightLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+        let currentLayer = darkLayer;
 
-        let heatLayer = null, heatData = [], audioEnabled = true;
+        let heatLayer = null, heatData = [], audioOn = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function updatePersonnelCount() {
-            let count = parseInt(document.getElementById('user-count').innerText);
-            document.getElementById('user-count').innerText = Math.max(380, count + (Math.floor(Math.random() * 5) - 2));
-        }
-        setInterval(updatePersonnelCount, 5000);
-
-        function toggleHeatmap() {
-            const btn = document.getElementById('heat-toggle-btn');
-            if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; btn.innerText = "🔥 Heatmap: OFF"; }
-            else { 
-                heatLayer = L.heatLayer(heatData, {radius: 45, blur: 20, max: 1.0}).addTo(map); 
-                btn.innerText = "🔥 Heatmap: ON";
-            }
+        function initializeSystem() {
+            document.getElementById('boot-overlay').style.display = 'none';
+            document.getElementById('map').classList.remove('blurred');
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            openManual(); // Show guide on first boot
+            updateTicker();
+            const mock = [{n:"LONDON",c:[51.5,-0.1]}, {n:"TOKYO",c:[35.6,139.7]}, {n:"NYC",c:[40.7,-74]}];
+            mock.forEach((z, i) => setTimeout(() => addIntel(z.c[0], z.c[1], z.n, 72), i * 1200));
         }
 
-        async function signalEmergency() {
-            const pos = map.getCenter();
-            const timestamp = new Date().toLocaleString();
-            const lat = pos.lat.toFixed(5);
-            const lon = pos.lng.toFixed(5);
+        function openManual() { document.getElementById('manual-overlay').style.display = 'flex'; }
+        function closeManual() { document.getElementById('manual-overlay').style.display = 'none'; }
 
-            // 1. Add High-Risk Pin to Map
-            addPin(lat, lon, "EMERGENCY SIGNAL", 100, true);
+        function toggleMapMode() {
+            map.removeLayer(currentLayer);
+            currentLayer = (currentLayer === darkLayer) ? lightLayer : darkLayer;
+            currentLayer.addTo(map);
+        }
 
-            // 2. Play Audio Alert
-            playRadarPing(); playRadarPing(); // Double ping for emergency
+        function screenshotMode() {
+            toggleUI();
+            document.querySelectorAll('.hud-overlay, .ticker-bar').forEach(el => el.style.opacity = '0');
+            setTimeout(() => {
+                toggleUI();
+                document.querySelectorAll('.hud-overlay, .ticker-bar').forEach(el => el.style.opacity = '1');
+            }, 6000);
+            alert("Clean View Active for 6s.");
+        }
 
-            // 3. Create Briefing Data
-            const briefText = `JSI EMERGENCY INTEL\n------------------\nTIME: ${timestamp}\nLOC: ${lat}, ${lon}\nSTATUS: HIGH RISK\n------------------\nReport logged to JSI Global Network.`;
+        function addIntel(lat, lon, name, risk, isEmergency = false) {
+            const icon = L.divIcon({ 
+                className: 'danger-pin', 
+                html: `<div class="pin-inner">${isEmergency ? '!' : risk + '%'}</div>`, 
+                iconSize: [30, 30] 
+            });
+            L.marker([lat, lon], { icon }).addTo(map).bindPopup(`<b>${name}</b><br>RISK: ${risk}%`);
+            heatData.push([lat, lon, risk/100]);
+            if (heatLayer) { heatLayer.setLatLngs(heatData); heatLayer.redraw(); }
             
-            // 4. Trigger Social Share
-            if (navigator.share) {
-                navigator.share({
-                    title: 'JSI Tactical Intel',
-                    text: briefText,
-                    url: window.location.href
-                }).catch(() => {
-                    alert("Briefing Copied to Clipboard.\n\n" + briefText);
-                    navigator.clipboard.writeText(briefText);
-                });
-            } else {
-                alert("Briefing Copied to Clipboard.\n\n" + briefText);
-                navigator.clipboard.writeText(briefText);
-            }
+            const entry = document.createElement('div');
+            entry.className = 'text-[9px] text-slate-500 py-1 border-b border-slate-900 cursor-pointer hover:text-red-500';
+            entry.innerText = `> [${new Date().toLocaleTimeString()}] ${name}`;
+            entry.onclick = () => map.flyTo([lat, lon], 12);
+            document.getElementById('log').prepend(entry);
         }
 
-        function addToHistory(name, lat, lon) {
-            const container = document.getElementById('search-history');
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerText = `> ${name}`;
-            item.onclick = () => map.flyTo([lat, lon], 12);
-            container.prepend(item);
-            if (container.children.length > 5) container.lastChild.remove();
+        async function signalIntel() {
+            const c = map.getCenter();
+            addIntel(c.lat, c.lng, "USER SIGNAL", 100, true);
+            const msg = `JSI TACTICAL ALERT\nCOORD: ${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}`;
+            if (navigator.share) navigator.share({ title: 'JSI INTEL', text: msg, url: window.location.href });
+            else { navigator.clipboard.writeText(msg); alert("Briefing Copied."); }
         }
 
-        document.getElementById('search-box').addEventListener('keypress', e => {
+        document.getElementById('search').addEventListener('keypress', e => {
             if (e.key === 'Enter') {
                 fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}`)
-                    .then(res => res.json()).then(data => {
-                        if (data.length > 0) {
-                            const lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
-                            map.flyTo([lat, lon], 12);
-                            addPin(lat, lon, e.target.value.toUpperCase(), Math.floor(Math.random() * 30) + 65, false);
-                            addToHistory(e.target.value.toUpperCase(), lat, lon);
+                    .then(r => r.json()).then(d => {
+                        if (d.length > 0) {
+                            map.flyTo([d[0].lat, d[0].lon], 12);
+                            addIntel(parseFloat(d[0].lat), parseFloat(d[0].lon), e.target.value.toUpperCase(), 78);
                         }
                     });
             }
         });
 
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playRadarPing() {
-            if (!audioEnabled) return;
-            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.5);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-        }
+        function toggleUI(e) { if(e) e.stopPropagation(); document.getElementById('sidebar').classList.toggle('minimized'); document.getElementById('menu-btn').style.display = document.getElementById('sidebar').classList.contains('minimized') ? 'flex' : 'none'; }
+        function toggleHeat() { if(heatLayer) { map.removeLayer(heatLayer); heatLayer = null; } else { heatLayer = L.heatLayer(heatData, {radius: 40, blur: 15}).addTo(map); } }
+        map.on('click', () => { if(!document.getElementById('sidebar').classList.contains('minimized')) toggleUI(); });
 
-        function toggleAudio() {
-            audioEnabled = !audioEnabled;
-            document.getElementById('audio-toggle').innerText = audioEnabled ? "🔊 Audio: ON" : "🔇 Audio: OFF";
-        }
-
-        function addPin(lat, lon, name, risk, isEmergency) {
-            const icon = L.divIcon({ 
-                className: 'danger-pin', 
-                html: `<span class="pin-text">${isEmergency?'!':risk+'%'}</span>`, 
-                iconSize: [35, 35] 
-            });
-            const marker = L.marker([lat, lon], { icon: icon }).addTo(map);
-            marker.bindPopup(`<b style="color:black">${isEmergency ? '⚠️ EMERGENCY' : name}</b><br><span style="color:red">Risk: ${risk}%</span>`).openPopup();
-            
-            heatData.push([parseFloat(lat), parseFloat(lon), risk / 100]);
-            if (heatLayer) { heatLayer.setLatLngs(heatData); heatLayer.redraw(); }
-            if (!isEmergency) playRadarPing();
-        }
-
-        function toggleSidebar(e) {
-            if (e) e.stopPropagation();
-            const sidebar = document.getElementById('main-sidebar');
-            const menuBtn = document.getElementById('menu-btn');
-            sidebar.classList.toggle('minimized');
-            menuBtn.style.display = sidebar.classList.contains('minimized') ? 'flex' : 'none';
-        }
-
-        map.on('click', () => { if (!document.getElementById('main-sidebar').classList.contains('minimized')) toggleSidebar(); });
-        map.on('mousemove touchmove', e => {
-            document.getElementById('coords-display').innerText = `LAT: ${e.latlng.lat.toFixed(5)} | LON: ${e.latlng.lng.toFixed(5)}`;
-        });
-
-        function acceptDisclaimer() {
-            document.getElementById('disclaimer-overlay').style.display = 'none';
-            document.getElementById('map').classList.remove('blurred');
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            // Start Auto Scan
-            const zones = [{ name: "Sector 1", coords: [40.7, -74] }, { name: "Sector 2", coords: [34, -118] }];
-            zones.forEach((z, i) => setTimeout(() => addPin(z.coords[0], z.coords[1], z.name, 70, false), i * 1500));
-        }
-
-        async function updateFeed() {
+        async function updateTicker() {
             try {
-                const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
-                const data = await res.json();
-                document.getElementById('news-ticker').innerText = data.World.slice(0, 10).map(i => `[LIVE] ${i.title.toUpperCase()} --- `).join("");
-            } catch (err) { document.getElementById('news-ticker').innerText = "[SYSTEM] MONITORING CHANNELS..."; }
-            document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
+                const r = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                const d = await r.json();
+                document.getElementById('ticker').innerText = d.World.slice(0, 8).map(i => `[INTEL] ${i.title.toUpperCase()} --- `).join("");
+            } catch (e) { document.getElementById('ticker').innerText = "[UPLINK STABLE] MONITORING SECTORS..."; }
         }
-
-        updateFeed(); setInterval(updateFeed, 300000);
+        setInterval(() => {
+            let c = parseInt(document.getElementById('u-count').innerText);
+            document.getElementById('u-count').innerText = c + (Math.floor(Math.random()*3)-1);
+        }, 4000);
     </script>
 </body>
 </html>
