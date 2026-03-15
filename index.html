@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JSI | Global Risk Monitor</title>
+    <title>JSI | Tactical Risk Monitor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,155 +15,152 @@
         .hud-card { background: rgba(0, 0, 0, 0.85); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; backdrop-filter: blur(5px); }
         
         /* Floating Action Menu */
-        #action-menu { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .action-btn { background: #ef4444; color: white; padding: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); cursor: pointer; transition: 0.3s; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .action-btn:hover { transform: scale(1.1); background: #b91c1c; }
-        .btn-secondary { background: #1e293b; border-color: #475569; }
+        #action-menu { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 15px; }
+        .action-btn { background: #ef4444; color: white; padding: 15px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); cursor: pointer; transition: 0.3s; width: 65px; height: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+        .action-btn span { font-size: 22px; margin-bottom: 2px; }
+        .btn-strike { background: #f97316; box-shadow: 0 0 15px rgba(249, 115, 22, 0.5); }
+        .btn-secondary { background: #1e293b; border-color: #475569; width: 50px; height: 50px; align-self: flex-end; }
 
-        /* Ticker */
+        /* Slowed Ticker */
         #ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background: rgba(0,0,0,0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 60s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; }
+        .ticker-move { white-space: nowrap; animation: ticker 120s linear infinite; color: #ef4444; font-weight: bold; font-size: 14px; letter-spacing: 1px; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Pins */
+        /* Impact Animation */
+        .impact-ring { border: 2px solid #f97316; border-radius: 50%; background: rgba(249, 115, 22, 0.2); animation: impact 2s ease-out infinite; }
+        @keyframes impact { 0% { transform: scale(0.1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        
+        /* Risk Pins */
         .risk-pin { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .risk-text { transform: rotate(45deg); font-size: 10px; font-weight: 900; color: white; }
         .high-risk { animation: pulse 1.5s infinite; background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-        @keyframes pulse { 0% { transform: rotate(-45deg) scale(1); } 50% { transform: rotate(-45deg) scale(1.2); } 100% { transform: rotate(-45deg) scale(1); } }
+        @keyframes pulse { 0% { transform: rotate(-45deg) scale(1); } 50% { transform: rotate(-45deg) scale(1.1); } 100% { transform: rotate(-45deg) scale(1); } }
     </style>
 </head>
 <body>
 
     <div id="hud-top">
         <div class="hud-card">
-            <div style="font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px;">Global Connectivity</div>
-            <div style="color: #10b981; font-weight: bold; font-size: 18px;">🛰️ <span id="user-count">5124</span> ACTIVE</div>
+            <div style="font-size: 9px; color: #9ca3af; text-transform: uppercase;">Network Uplink</div>
+            <div style="color: #10b981; font-weight: bold; font-size: 18px;"><span id="user-count">5124</span> OPS ACTIVE</div>
         </div>
-        <div class="hud-card" id="search-container">
-            <input type="text" id="map-search" placeholder="CHECK AREA RISK..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-48 py-1">
+        <div class="hud-card">
+            <input type="text" id="map-search" placeholder="LOCATE SECTOR..." class="bg-transparent border-b border-red-500 outline-none text-white text-sm w-40 py-1 uppercase font-bold">
         </div>
     </div>
 
     <div id="action-menu">
-        <div class="action-btn" title="Report Anti-Semitism" onclick="reportIncident()">📢</div>
-        <div class="action-btn btn-secondary" title="Share Site" onclick="shareSite()">🔗</div>
-        <div class="action-btn btn-secondary" id="mode-toggle" title="Toggle Mode" onclick="toggleMapMode()">🌗</div>
+        <div class="action-btn" onclick="reportIncident()"><span>📢</span>INTEL</div>
+        <div class="action-btn btn-strike" onclick="reportRocket()"><span>🚀</span>STRIKE</div>
+        <div class="action-btn btn-secondary" onclick="shareSite()"><span>🔗</span></div>
+        <div class="action-btn btn-secondary" onclick="toggleMapMode()"><span>🌗</span></div>
     </div>
 
     <div id="map"></div>
 
     <div id="ticker-wrap">
-        <div class="ticker-move" id="news-stream">INITIALIZING GLOBAL NEWS UPLINK... STANDBY...</div>
+        <div class="ticker-move" id="news-stream">SYNCING WITH WORLD NEWS DATA... ESTABLISHING SECURE CONNECTION...</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Configuration & State
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([20, 0], 2);
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31, 35], 5);
         const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
         const lightLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         let currentLayer = darkLayer;
 
         let reports = [
-            { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 88, lastUpdate: Date.now() },
-            { id: 2, name: "Paris", lat: 48.8566, lng: 2.3522, risk: 82, lastUpdate: Date.now() },
-            { id: 3, name: "New York", lat: 40.7128, lng: -74.0060, risk: 65, lastUpdate: Date.now() }
+            { id: 1, name: "Jerusalem", lat: 31.7683, lng: 35.2137, risk: 92, lastUpdate: Date.now(), type: 'risk' },
+            { id: 2, name: "Paris", lat: 48.8566, lng: 2.3522, risk: 85, lastUpdate: Date.now(), type: 'risk' }
         ];
 
-        // 1. Fluctuating Risk & User Logic
+        // 1. Live Fluctuations
         function updateHUD() {
-            // Users stay above 5000
-            const count = 5000 + Math.floor(Math.random() * 450);
-            document.getElementById('user-count').innerText = count.toLocaleString();
-            
-            // Randomly fluctuate risks slightly to show "live" data
+            document.getElementById('user-count').innerText = (5200 + Math.floor(Math.random() * 800)).toLocaleString();
             reports.forEach(r => {
-                r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 2 - 1)));
+                r.risk = Math.min(100, Math.max(10, r.risk + (Math.random() * 1.4 - 0.7)));
             });
             renderPins();
         }
         setInterval(updateHUD, 4000);
 
-        // 2. The Decay Engine (Reduces % if no reporting over 24hrs)
-        // For demo: runs every 10 seconds to show the logic works
-        function decayLogic() {
+        // 2. Decay Logic (Risks fade without new reports)
+        setInterval(() => {
             const now = Date.now();
             reports.forEach(r => {
-                const ageInHours = (now - r.lastUpdate) / (1000 * 60 * 60);
-                if (ageInHours > 0.01) { // Normally 24, set low for demo
-                    r.risk *= 0.99; // Drop by 1%
+                const ageHours = (now - r.lastUpdate) / (1000 * 60 * 60);
+                if (ageHours > 0.005) { // Visual decay for demo
+                    r.risk *= 0.995; 
+                    if (r.type === 'strike' && ageHours > 0.1) r.type = 'risk'; // Strikes turn back to risk markers after time
+                }
+            });
+        }, 12000);
+
+        // 3. Reporting Functions
+        function reportIncident() {
+            const name = prompt("Location of Anti-Semitic incident:");
+            if (name) processReport(name, 25, 'risk');
+        }
+
+        function reportRocket() {
+            const name = prompt("Location of Rocket Impact / Siren:");
+            if (name) processReport(name, 45, 'strike');
+        }
+
+        function processReport(name, impact, type) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${name}`)
+            .then(res => res.json()).then(data => {
+                if (data.length > 0) {
+                    const { lat, lon } = data[0];
+                    const existing = reports.find(r => r.name.toLowerCase() === name.toLowerCase());
+                    if (existing) {
+                        existing.risk = Math.min(100, existing.risk + impact);
+                        existing.type = type;
+                        existing.lastUpdate = Date.now();
+                    } else {
+                        reports.push({ name: name.toUpperCase(), lat: parseFloat(lat), lng: parseFloat(lon), risk: 75 + impact, lastUpdate: Date.now(), type: type });
+                    }
+                    map.flyTo([lat, lon], 10);
+                    renderPins();
                 }
             });
         }
-        setInterval(decayLogic, 10000);
 
-        // 3. Simple Search & Report
-        document.getElementById('map-search').addEventListener('keypress', e => {
-            if (e.key === 'Enter') {
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}`)
-                .then(res => res.json()).then(data => {
-                    if (data.length > 0) {
-                        const { lat, lon } = data[0];
-                        map.flyTo([lat, lon], 12);
-                        // Add temporary search pin if not already there
-                        if (!reports.find(r => r.name === e.target.value.toUpperCase())) {
-                            reports.push({ name: e.target.value.toUpperCase(), lat: parseFloat(lat), lng: parseFloat(lon), risk: Math.floor(Math.random()*40)+20, lastUpdate: Date.now() });
-                        }
-                    }
-                });
-            }
-        });
-
-        function reportIncident() {
-            const center = map.getCenter();
-            const locationName = prompt("Specify City/Area of Anti-Semitic incident:");
-            if (locationName) {
-                const existing = reports.find(r => r.name.toLowerCase() === locationName.toLowerCase());
-                if (existing) {
-                    existing.risk = Math.min(100, existing.risk + 25);
-                    existing.lastUpdate = Date.now();
-                } else {
-                    reports.push({ 
-                        name: locationName.toUpperCase(), 
-                        lat: center.lat, 
-                        lng: center.lng, 
-                        risk: 85, 
-                        lastUpdate: Date.now() 
-                    });
-                }
-                alert(`Intel Received. Risk levels for ${locationName} updated immediately.`);
-                renderPins();
-            }
-        }
-
-        // 4. Render Pins (80%+ always show)
+        // 4. Rendering (80% Always Shown)
         let markers = [];
         function renderPins() {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
             reports.forEach(r => {
-                // Logic: Show if High Risk (>80) OR if within current map view
                 const bounds = map.getBounds();
-                const isVisible = bounds.contains([r.lat, r.lng]);
-                
-                if (r.risk >= 80 || isVisible) {
-                    const icon = L.divIcon({
-                        className: 'risk-pin-container',
-                        html: `<div class="risk-pin ${r.risk >= 80 ? 'high-risk' : ''}" style="width:30px; height:30px;">
-                                <span class="risk-text">${Math.floor(r.risk)}%</span>
-                               </div>`,
-                        iconSize: [30, 30]
-                    });
+                if (r.risk >= 80 || bounds.contains([r.lat, r.lng])) {
+                    let iconHtml = '';
+                    
+                    if (r.type === 'strike') {
+                        // Orange Impact Visual
+                        iconHtml = `<div class="impact-ring" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center;">🚀</div>`;
+                    } else {
+                        // Standard Risk Pin
+                        iconHtml = `<div class="risk-pin ${r.risk >= 80 ? 'high-risk' : ''}" style="width:30px; height:30px;">
+                                    <span class="risk-text">${Math.floor(r.risk)}%</span>
+                                   </div>`;
+                    }
+
+                    const icon = L.divIcon({ className: 'custom-m', html: iconHtml, iconSize: [40, 40] });
                     const m = L.marker([r.lat, r.lng], { icon }).addTo(map);
-                    m.bindPopup(`<b>${r.name}</b><br>Risk: ${Math.floor(r.risk)}%<br>Status: ${r.risk > 80 ? 'CRITICAL' : 'MONITORED'}`);
+                    m.bindPopup(`<b>${r.name}</b><br>Type: ${r.type.toUpperCase()}<br>Risk: ${Math.floor(r.risk)}%`);
                     markers.push(m);
                 }
             });
         }
         map.on('moveend', renderPins);
 
-        // 5. Sharing & UI
+        // 5. Shared Logic
+        document.getElementById('map-search').addEventListener('keypress', e => {
+            if (e.key === 'Enter') processReport(e.target.value, 0, 'risk');
+        });
+
         function toggleMapMode() {
             map.removeLayer(currentLayer);
             currentLayer = (currentLayer === darkLayer) ? lightLayer : darkLayer;
@@ -171,29 +168,20 @@
         }
 
         function shareSite() {
-            const center = map.getCenter();
-            const text = `⚠️ GLOBAL RISK ALERT\nMonitoring current danger levels at ${center.lat.toFixed(2)}, ${center.lng.toFixed(2)}.\nCheck your area on JSI:`;
-            if (navigator.share) {
-                navigator.share({ title: 'JSI Risk Monitor', text: text, url: window.location.href });
-            } else {
-                navigator.clipboard.writeText(`${text} ${window.location.href}`);
-                alert("Site link and tactical alert copied to clipboard.");
-            }
+            const text = `⚠️ JSI TACTICAL UPDATE: Monitoring high-risk zones and impact data. View live % levels:`;
+            if (navigator.share) navigator.share({ title: 'JSI Risk Monitor', text: text, url: window.location.href });
+            else { navigator.clipboard.writeText(text + " " + window.location.href); alert("Copied to Clipboard."); }
         }
 
         async function getNews() {
             try {
                 const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await res.json();
-                const news = data.World.map(n => ` [LIVE REPORT] ${n.title.toUpperCase()} ---`).join("");
-                document.getElementById('news-stream').innerText = news;
-            } catch (e) { 
-                document.getElementById('news-stream').innerText = "MONITORING GLOBAL FEEDS... DATA STREAM ACTIVE... NO NEW ALERTS..."; 
-            }
+                const news = data.World.map(n => ` [REPORT] ${n.title.toUpperCase()} ••• `).join("");
+                document.getElementById('news-stream').innerText = news + news; 
+            } catch (e) { document.getElementById('news-stream').innerText = "STREAMING GLOBAL TACTICAL FEEDS... STATUS: ACTIVE... "; }
         }
         getNews(); setInterval(getNews, 300000);
-
-        // Initial render
         setTimeout(renderPins, 1000);
     </script>
 </body>
