@@ -17,12 +17,17 @@
         .news-item { margin-right: 50px; text-decoration: none; color: inherit; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
-        .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; }
+        .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
+        
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 30px; height: 30px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; white-space: nowrap; text-transform: uppercase; }
         .intel-link { display: block; background: #eee; color: #000 !important; font-size: 10px; padding: 8px; margin-top: 5px; text-align: center; font-weight: bold; text-decoration: none; border-radius: 3px; border-left: 4px solid #ef4444; }
         
+        /* User "I'M HERE" Marker */
+        .user-pulse { width: 15px; height: 15px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; animation: pulse-anim 2s infinite; }
+        @keyframes pulse-anim { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(0.9); opacity: 1; } }
+
         /* Briefcase UI */
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 300px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 6000; transition: 0.4s; padding: 20px; overflow-y: auto; }
         #briefcase-sidebar.open { right: 0; }
@@ -46,6 +51,7 @@
 
     <div id="action-menu">
         <div class="action-btn" onclick="openReport()"><span>📡</span>REPORT</div>
+        <div class="action-btn" style="background:#3b82f6;" onclick="locateUser()"><span>📍</span>UPLINK</div>
         <div id="day-night-btn" class="action-btn" style="background:#333;" onclick="toggleMapMode()"><span>🌞</span>DAY</div>
         <div class="action-btn" style="background:#1f2937;" onclick="toggleBriefcase()"><span>💼</span>CASE</div>
         <div class="action-btn" style="background:#7c3aed;" onclick="shareSite()"><span>🔗</span>SHARE</div>
@@ -97,6 +103,8 @@
         let isDarkMode = true;
         let tappedCoords = null;
         let tappedAddress = "";
+        let userMarker = null;
+
         darkTiles.addTo(map);
 
         function manualUnlock() {
@@ -111,6 +119,51 @@
             }
         }
 
+        // --- FIXED DAY/NIGHT TOGGLE ---
+        function toggleMapMode() {
+            const btn = document.getElementById('day-night-btn');
+            if (isDarkMode) {
+                map.removeLayer(darkTiles);
+                lightTiles.addTo(map);
+                btn.innerHTML = "<span>🌙</span>NIGHT";
+                btn.style.background = "#ddd";
+                btn.style.color = "#000";
+                isDarkMode = false;
+            } else {
+                map.removeLayer(lightTiles);
+                darkTiles.addTo(map);
+                btn.innerHTML = "<span>🌞</span>DAY";
+                btn.style.background = "#333";
+                btn.style.color = "#fff";
+                isDarkMode = true;
+            }
+        }
+
+        // --- FIXED SHARE BUTTON ---
+        function shareSite() {
+            const shareText = "JSI TACTICAL MONITOR | Access Key: אחד";
+            if (navigator.share) {
+                navigator.share({ title: 'JSI Monitor', text: shareText, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(`${shareText} - ${window.location.href}`);
+                alert("Tactical Link Copied to Clipboard.");
+            }
+        }
+
+        // --- GPS UPLINK ---
+        function locateUser() {
+            map.locate({setView: true, maxZoom: 13});
+        }
+
+        map.on('locationfound', function(e) {
+            if (userMarker) map.removeLayer(userMarker);
+            const userIcon = L.divIcon({ className: 'user-pulse', iconSize: [15, 15] });
+            userMarker = L.marker(e.latlng, {icon: userIcon}).addTo(map).bindPopup("<b>I'M HERE</b>").openPopup();
+        });
+
+        map.on('locationerror', function() { alert("GPS Denied. (Requires HTTPS)"); });
+
+        // Map Click Handling
         map.on('click', async function(e) {
             tappedCoords = e.latlng;
             document.getElementById('resolved-address').innerText = "IDENTIFYING...";
@@ -180,11 +233,20 @@
 
         function clearBriefcase() { localStorage.removeItem('jsi_case'); location.reload(); }
         function toggleBriefcase() { document.getElementById('briefcase-sidebar').classList.toggle('open'); }
-        function toggleMapMode() { /* Same as before */ }
-        async function fetchLiveNews() { /* Same as before */ }
+
+        async function fetchLiveNews() {
+            try {
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=unrest+conflict+israel+iran&hl=en-US&gl=US&ceid=US:en')}`);
+                const data = await res.json();
+                if(data.items) {
+                    const html = data.items.slice(0, 10).map(i => `<a href="${i.link}" target="_blank" class="news-item">[ INTEL: ${i.title.toUpperCase()} ]</a>`).join(' • ');
+                    document.getElementById('live-news-ticker').innerHTML = html + ' • ' + html;
+                }
+            } catch (e) { document.getElementById('live-news-ticker').innerText = "SIGNAL DELAYED..."; }
+        }
+
         function openReport(isTap = false) { document.getElementById('report-modal').style.display = 'flex'; }
         function closeReport() { document.getElementById('report-modal').style.display = 'none'; }
-        function shareSite() { /* Same as before */ }
     </script>
 </body>
 </html>
