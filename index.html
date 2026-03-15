@@ -3,38 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JSI | Sovereign Intelligence</title>
+    <title>JSI | Sovereign Monitor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Map Container */
         #map { position: absolute; top: 60px; bottom: 46px; left: 0; right: 0; z-index: 10; background: #000; cursor: crosshair; }
         
-        /* Unified HUD Header */
+        /* HUD Header */
         #hud-header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #000; z-index: 5005; border-bottom: 1px solid #333; }
-        #threat-ticker { height: 25px; background: #111; display: flex; align-items: center; font-size: 10px; font-weight: bold; overflow: hidden; border-bottom: 1px solid #222; }
-        .threat-level-bar { height: 100%; background: #ef4444; transition: width 2s ease-in-out; }
+        #threat-ticker { height: 25px; background: #111; display: flex; align-items: center; font-size: 10px; font-weight: bold; overflow: hidden; }
         #news-bulletin-wrap { height: 35px; background: #ef4444; color: #000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; }
 
-        /* Counter Styling (Top Right) */
+        /* Counter */
         #user-counter { position: fixed; top: 12px; right: 15px; z-index: 6000; background: rgba(0,0,0,0.8); border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #ef4444; font-weight: bold; pointer-events: none; }
         .pulse-dot { display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; margin-right: 5px; animation: pulse 1s infinite; }
 
-        /* Popup Content */
-        .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; padding: 2px; }
-        .leaflet-popup-tip { background: #ef4444; }
-        .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 8px; margin-top: 10px; font-weight: bold; font-size: 11px; cursor: pointer; outline: none; }
-        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 8px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; cursor: pointer; border: none; text-align: center; }
-        .intel-input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 8px; font-size: 10px; margin-top: 5px; outline: none; }
-
-        /* News Animation */
-        .news-ticker-move { white-space: nowrap; animation: ticker-news 100s linear infinite; display: flex; }
-        @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        /* Pin & Popup Styling */
+        .tactical-pin { border: 2px solid white; border-radius: 50% 50% 50% 0; width: 24px; height: 24px; transform: rotate(-45deg); background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+        .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; }
+        .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 10px; margin-top: 10px; font-weight: bold; font-size: 11px; outline: none; }
+        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 10px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; cursor: pointer; border: none; }
+        .intel-input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 10px; font-size: 11px; margin-top: 10px; outline: none; }
 
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
+        .news-ticker-move { white-space: nowrap; animation: ticker-news 100s linear infinite; display: flex; }
+        @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
@@ -45,12 +40,12 @@
 
     <header id="hud-header">
         <div id="threat-ticker">
-            <div id="threat-bar" class="threat-level-bar" style="width: 88%;"></div>
-            <div id="threat-text" style="position:absolute; width:100%; text-align:center; text-shadow: 1px 1px black; color: white;">MARCH 15, 2026: OPERATION ROARING LION - RISK LEVEL: 88%</div>
+            <div style="height:100%; background:#ef4444; width:88%;"></div>
+            <div style="position:absolute; width:100%; text-align:center; font-size:10px; text-shadow:1px 1px #000;">GLOBAL RISK LEVEL: 88% - HIGH ALERT</div>
         </div>
         <div id="news-bulletin-wrap">
             <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white; z-index:2;">FLASH</div>
-            <div class="news-ticker-move" id="live-news-ticker">PENDING DATA...</div>
+            <div class="news-ticker-move" id="live-news-ticker">FETCHING INTELLIGENCE STREAMS...</div>
         </div>
     </header>
 
@@ -70,80 +65,65 @@
         const map = L.map('map', { zoomControl: false, attributionControl: false, tap: false }).setView([31.7, 35.2], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Dynamic User Counter
+        // Counter Fluctuation
         setInterval(() => {
-            const current = parseInt(document.getElementById('count-val').innerText);
-            const drift = Math.floor(Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1);
-            document.getElementById('count-val').innerText = Math.max(4001, current + drift);
-        }, 4000);
+            const val = document.getElementById('count-val');
+            val.innerText = Math.floor(4000 + Math.random() * 100);
+        }, 3000);
 
-        // Live News Feed (Updated for March 15, 2026 Context)
-        async function fetchLiveIntel() {
-            const news = [
-                "IDF CONFIRMS OPERATION ROARING LION ACTIVE IN IRAN SECTOR",
-                "MISSILE IMPACT REPORTED IN CENTRAL ISRAEL",
-                "TRUMP SUGGESTS ADDITIONAL STRIKES ON IRAN OIL HUBS",
-                "SYRIAN MINORITIES FACE KIDNAPPING RISKS AMID REGIONAL CHAOS",
-                "US AIR FORCE B-52 BOMBERS DEPLOYED IN OPERATION EPIC FURY",
-                "IDF DESTROYS 90% OF HEZBOLLAH PRE-2023 ARSENAL"
-            ];
-            const tickerHtml = news.map(msg => `<span style="margin-right:80px;">[ INTEL: ${msg} ]</span>`).join('');
-            document.getElementById('live-news-ticker').innerHTML = tickerHtml + tickerHtml;
-        }
-        fetchLiveIntel();
+        // Mock News Data
+        const newsStream = ["IRAN SECTOR: ENRICHMENT SPIKE DETECTED", "IDF MOBILIZING IN NORTHERN DISTRICT", "US CARRIER GROUP ENTERS RED SEA", "CYBER ATTACK MITIGATED ON TEL AVIV GRID"];
+        document.getElementById('live-news-ticker').innerHTML = newsStream.map(n => `<span style="margin-right:100px;">[ ${n} ]</span>`).join('').repeat(2);
 
-        // Map Click Handler
+        // MAP CLICK: DROPS PIN
         map.on('click', async function(e) {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
             const data = await res.json();
-            const addr = data.address;
-            
-            const city = addr.city || addr.town || addr.village || addr.suburb || "LOCAL SECTOR";
-            const state = addr.state || addr.province || addr.country || "GLOBAL REGION";
-            const threat = Math.floor(Math.random() * 30) + 65; // High alert base (65-95%)
+            const sectorName = data.address.city || data.address.state || "UNKNOWN SECTOR";
 
-            const popupBody = `
-                <div style="min-width:180px;">
-                    <b style="color:#ef4444; font-size:14px;">${city.toUpperCase()}</b><br>
-                    <span style="font-size:10px; color:#888;">${state.toUpperCase()}</span>
-                    <hr style="border:0; border-top:1px solid #333; margin:8px 0;">
+            const pinIcon = L.divIcon({ className: 'custom-div-icon', html: "<div class='tactical-pin'></div>", iconSize: [24, 24], iconAnchor: [12, 24] });
+            const marker = L.marker(e.latlng, { icon: pinIcon }).addTo(map);
+
+            const popupContent = `
+                <div style="min-width:200px; padding:5px;">
+                    <b style="color:#ef4444; text-transform:uppercase; letter-spacing:1px;">${sectorName}</b>
+                    <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
                     
-                    <select class="intel-select" id="intel-mode" onchange="switchIntel('${city}', '${state}', ${threat}, ${e.latlng.lat}, ${e.latlng.lng})">
-                        <option value="news">📰 NEWS INTEL</option>
-                        <option value="threat">☢️ SECTOR RISK: ${threat}%</option>
-                        <option value="report">📡 TRANSMIT INTEL</option>
+                    <select class="intel-select" id="mode-${marker._leaflet_id}" onchange="toggleMenu(${marker._leaflet_id}, '${sectorName}', ${e.latlng.lat}, ${e.latlng.lng})">
+                        <option value="">-- SELECT ACTION --</option>
+                        <option value="news">📰 READ NEWS</option>
+                        <option value="report">⚠️ REPORT THREAT</option>
                     </select>
 
-                    <div id="intel-display" style="margin-top:10px;">
-                        <a href="https://www.google.com/search?q=${city}+${state}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block;">FETCH 10 LIVE FEEDS</a>
-                    </div>
+                    <div id="content-${marker._leaflet_id}" class="mt-2"></div>
                 </div>
             `;
-            L.popup().setLatLng(e.latlng).setContent(popupBody).openOn(map);
+
+            marker.bindPopup(popupContent).openPopup();
         });
 
-        function switchIntel(city, state, threat, lat, lon) {
-            const mode = document.getElementById('intel-mode').value;
-            const display = document.getElementById('intel-display');
-            
+        function toggleMenu(id, sector, lat, lon) {
+            const mode = document.getElementById(`mode-${id}`).value;
+            const container = document.getElementById(`content-${id}`);
+
             if (mode === 'news') {
-                display.innerHTML = `<a href="https://www.google.com/search?q=${city}+${state}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block;">FETCH 10 LIVE FEEDS</a>`;
-            } else if (mode === 'threat') {
-                display.innerHTML = `<div style="background:#111; padding:10px; border:1px solid #ef4444; font-size:11px;">
-                    <span style="color:#ef4444; font-weight:bold;">TACTICAL RISK: ${threat}%</span><br>
-                    <span style="font-size:9px; color:#888;">Active Hostilities in Perimeter. Move with Caution.</span>
-                </div>`;
-            } else if (mode === 'report') {
-                display.innerHTML = `
-                    <input type="text" id="report-text" placeholder="Detail threat observation..." class="intel-input">
-                    <button class="intel-btn" onclick="sendIntelToDiscord('${city}', '${state}', ${lat}, ${lon})">TRANSMIT TO HQ</button>
+                container.innerHTML = `
+                    <p style="font-size:10px; color:#888; margin-bottom:8px;">FETCHING 10 RELEVANT SOURCES...</p>
+                    <a href="https://www.google.com/search?q=${sector}+breaking+news+today&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS HUB</a>
                 `;
+            } else if (mode === 'report') {
+                container.innerHTML = `
+                    <textarea id="input-${id}" class="intel-input" placeholder="Enter threat details..." rows="2"></textarea>
+                    <button class="intel-btn" onclick="submitThreat(${id}, '${sector}', ${lat}, ${lon})">TRANSMIT TO HQ</button>
+                `;
+            } else {
+                container.innerHTML = "";
             }
         }
 
-        async function sendIntelToDiscord(city, state, lat, lon) {
-            const report = document.getElementById('report-text').value;
-            if(!report) return alert("Report required.");
+        async function submitThreat(id, sector, lat, lon) {
+            const text = document.getElementById(`input-${id}`).value;
+            if (!text) return alert("Field Intelligence Required.");
 
             try {
                 await fetch(DISCORD_WEBHOOK_URL, {
@@ -151,21 +131,21 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         embeds: [{
-                            title: `🚨 FIELD INTEL: ${city.toUpperCase()}`,
+                            title: `🚨 THREAT REPORTED: ${sector.toUpperCase()}`,
                             color: 15548997,
                             fields: [
-                                { name: "Sector", value: `${city}, ${state}` },
-                                { name: "Coordinates", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}` },
-                                { name: "Observation", value: report }
+                                { name: "Sector", value: sector, inline: true },
+                                { name: "GPS", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, inline: true },
+                                { name: "Intelligence", value: text }
                             ],
-                            footer: { text: "JSI Sovereign Tactical Monitor | March 2026" }
+                            timestamp: new Date()
                         }]
                     })
                 });
-                alert("INTEL TRANSMITTED. RETURN TO OVERWATCH.");
+                alert("INTEL RECEIVED. OVERWATCH UPDATED.");
                 map.closePopup();
-            } catch (e) {
-                alert("UPLINK FAILED.");
+            } catch (err) {
+                alert("UPLINK ERROR.");
             }
         }
     </script>
