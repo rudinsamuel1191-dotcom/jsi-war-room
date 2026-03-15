@@ -2,44 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JSI | War Room Command</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JSI WarRoom">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
         
-        /* UI Overlay */
         .sidebar {
-            position: absolute; top: 20px; left: 20px; width: 320px; z-index: 1000;
+            position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000;
             background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
             padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
         }
 
-        /* News Ticker */
+        .panic-btn {
+            background: #b91c1c; color: white; width: 100%; padding: 15px;
+            text-transform: uppercase; font-weight: 900; margin-top: 20px;
+            border-radius: 4px; border: 2px solid #ef4444; cursor: pointer;
+        }
+
         .ticker-wrap {
-            position: absolute; bottom: 0; width: 100%; overflow: hidden;
-            height: 40px; background-color: rgba(0, 0, 0, 0.9);
-            border-top: 2px solid #ef4444; z-index: 1001;
-            display: flex; align-items: center;
+            position: absolute; bottom: 0; width: 100%; height: 40px; 
+            background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; 
+            z-index: 1001; display: flex; align-items: center; overflow: hidden;
         }
         .ticker {
-            display: inline-block; white-space: nowrap; padding-right: 100%;
-            animation: ticker 60s linear infinite; font-weight: bold; color: #ef4444;
+            display: inline-block; white-space: nowrap; animation: ticker 45s linear infinite; 
+            font-weight: bold; color: #ef4444; font-size: 14px;
         }
-        .ticker-item { display: inline-block; padding: 0 50px; }
         @keyframes ticker {
-            0% { transform: translate3d(0, 0, 0); }
+            0% { transform: translate3d(100%, 0, 0); }
             100% { transform: translate3d(-100%, 0, 0); }
         }
 
-        .report-btn {
-            background: #ef4444; color: white; width: 100%; padding: 12px;
-            text-transform: uppercase; font-weight: bold; margin-top: 15px;
-            border-radius: 4px; transition: 0.3s; cursor: pointer; border: none;
+        .search-input {
+            background: #1f2937; color: white; width: 100%; padding: 10px;
+            border: 1px solid #4b5563; border-radius: 4px; margin-top: 10px; font-size: 12px;
         }
-        .report-btn:hover { background: #b91c1c; box-shadow: 0 0 15px #ef4444; }
 
         .danger-pin {
             background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 50% 0;
@@ -59,58 +64,63 @@
 
     <div class="sidebar">
         <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
-        <p style="color: #9ca3af; font-size: 10px; margin-bottom: 20px;">SYSTEM STATUS: ACTIVE</p>
+        <p id="status-time" style="color: #9ca3af; font-size: 10px; margin-bottom: 15px;">LINK ESTABLISHED</p>
         
         <div style="border-top: 1px solid #374151; padding-top: 15px;">
-            <label style="font-size: 12px; color: #9ca3af;">INCIDENT TYPE</label>
-            <select style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border-radius: 4px;">
-                <option>Physical Threat</option>
-                <option>Vandalism</option>
-                <option>Protest / Unrest</option>
-                <option>Verbal Harassment</option>
-            </select>
-            
-            <label style="font-size: 12px; color: #9ca3af; margin-top: 10px; display: block;">LOCATION</label>
-            <input type="text" placeholder="e.g. Brooklyn, NY" style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border: none; border-radius: 4px;">
-            
-            <button class="report-btn" onclick="alert('Incident Logged to Command Center')">Transmit Report</button>
+            <label style="font-size: 10px; color: #ef4444; font-weight: bold;">INTEL SEARCH</label>
+            <input type="text" id="search-box" class="search-input" placeholder="Enter City...">
         </div>
+
+        <button class="panic-btn" onclick="triggerPanic()">⚠️ Signal Emergency</button>
     </div>
 
     <div class="ticker-wrap">
-        <div class="ticker">
-            <span class="ticker-item">[FLASH] JSI SENSORS DETECT INCREASED ACTIVITY IN NORTH-EAST CORRIDOR...</span>
-            <span class="ticker-item">[UPDATE] PARIS RISK LEVEL ADJUSTED TO 78%...</span>
-            <span class="ticker-item">[LIVE] COMMUNITY REPORTS STREAMING FROM NEW YORK METRO AREA...</span>
-            <span class="ticker-item">[INFO] ALL PINS INDICATE DATA WITHIN LAST 24 HOURS...</span>
-            <span class="ticker-item">[ALERT] NEW VANDALISM REPORTED IN LONDON SUBURBS...</span>
-        </div>
+        <div class="ticker" id="news-ticker">FETCHING GLOBAL INTELLIGENCE DATA...</div>
     </div>
 
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map', { zoomControl: false }).setView([30, 0], 2);
-
+        const map = L.map('map', { zoomControl: false }).setView([25, 10], 2);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        const locations = [
-            { name: "New York", coords: [40.7128, -74.0060], score: 84 },
-            { name: "California", coords: [36.7783, -119.4179], score: 71 },
-            { name: "Florida", coords: [27.6648, -81.5158], score: 52 },
-            { name: "London", coords: [51.5074, -0.1278], score: 65 },
-            { name: "Paris", coords: [48.8566, 2.3522], score: 78 }
-        ];
+        function triggerPanic() {
+            const emergencyContact = "911"; 
+            const message = encodeURIComponent("JSI EMERGENCY: I am in an unsafe zone. Monitor my status via the War Room: " + window.location.href);
+            window.location.href = `sms:${emergencyContact}?&body=${message}`;
+        }
 
-        locations.forEach(loc => {
-            const icon = L.divIcon({
-                className: 'danger-pin',
-                html: `<span class="pin-text">${loc.score}%</span>`,
-                iconSize: [35, 35]
-            });
-            L.marker(loc.coords, { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${loc.name}: ${loc.score}% Danger</b>`);
+        document.getElementById('search-box').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const city = e.target.value;
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${city}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            const lat = data[0].lat;
+                            const lon = data[0].lon;
+                            const risk = Math.floor(Math.random() * 40) + 55;
+                            map.flyTo([lat, lon], 12);
+                            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${risk}%</span>`, iconSize: [35, 35] });
+                            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${city.toUpperCase()}: ${risk}% Risk</b>`).openPopup();
+                        }
+                    });
+            }
         });
+
+        async function updateFeed() {
+            try {
+                const response = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                const data = await response.json();
+                const feeds = data.World.slice(0, 10).map(item => `[BREAKING] ${item.title.toUpperCase()} --- `);
+                document.getElementById('news-ticker').innerText = feeds.join(" ");
+                document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
+            } catch (err) {}
+        }
+
+        updateFeed();
+        setInterval(updateFeed, 300000);
     </script>
 </body>
 </html>
