@@ -11,16 +11,35 @@
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
+        
+        /* Sidebar Styling */
         .sidebar {
             position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000;
             background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
             padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
-            max-height: 85vh; overflow-y: auto;
+            max-height: 80vh; overflow-y: auto;
         }
+
+        /* Info Button Styling */
+        .info-trigger {
+            position: absolute; top: 15px; right: 15px; cursor: pointer;
+            background: #374151; border-radius: 50%; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;
+        }
+
+        /* Modal / Overlay Styling */
+        #info-modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #0f172a; margin: 10% auto; padding: 30px; border: 1px solid #ef4444;
+            width: 85%; max-width: 500px; border-radius: 12px; max-height: 70vh; overflow-y: auto;
+        }
+
         .section-label { font-size: 10px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
-        .action-btn:hover { background: #374151; }
+        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; }
         .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; }
         
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
@@ -29,12 +48,25 @@
 
         .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
 
+    <div id="info-modal">
+        <div class="modal-content">
+            <h2 style="color:#ef4444; border-bottom: 1px solid #ef4444; padding-bottom:10px;">OPERATIONAL GUIDE</h2>
+            <div style="font-size: 13px; line-height: 1.6; color: #d1d5db; margin-top: 15px;">
+                <p><strong>SEARCH:</strong> Enter a city to calculate localized risk scores.</p>
+                <p><strong>TRANSCRIBE:</strong> Witnessed an event? Search the location, select threat type, and tap "Post to War Room".</p>
+                <p><strong>TICKER:</strong> Bottom feed displays live global intelligence.</p>
+                <p><strong>PANIC:</strong> Triggers immediate SMS alert to emergency contacts.</p>
+            </div>
+            <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">Return to Command</button>
+        </div>
+    </div>
+
     <div class="sidebar">
+        <div class="info-trigger" onclick="openModal()">?</div>
         <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
         <p id="status-time" style="color: #9ca3af; font-size: 10px; margin-bottom: 20px;">SYSTEM ACTIVE</p>
         
@@ -43,15 +75,14 @@
 
         <span class="section-label">2. Transcribe Intel</span>
         <select id="threat-type" class="input-style">
-            <option value="Physical Threat">Physical Threat</option>
-            <option value="Protest/Unrest">Protest/Unrest</option>
-            <option value="Vandalism">Vandalism</option>
-            <option value="Harassment">Harassment</option>
+            <option>Physical Threat</option>
+            <option>Protest/Unrest</option>
+            <option>Vandalism</option>
+            <option>Harassment</option>
         </select>
         <button class="action-btn" onclick="logFieldReport()">Post to War Room</button>
 
         <div style="border-top: 1px solid #374151; margin: 15px 0;"></div>
-        
         <button class="panic-btn" onclick="triggerPanic()">⚠️ Signal Emergency</button>
     </div>
 
@@ -66,9 +97,11 @@
         const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
+        function openModal() { document.getElementById('info-modal').style.display = 'block'; }
+        function closeModal() { document.getElementById('info-modal').style.display = 'none'; }
+
         let lastSearchedLocation = null;
 
-        // Search and Fly
         document.getElementById('search-box').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const city = e.target.value;
@@ -78,27 +111,18 @@
                         if (data.length > 0) {
                             lastSearchedLocation = { lat: data[0].lat, lon: data[0].lon, name: city.toUpperCase() };
                             map.flyTo([lastSearchedLocation.lat, lastSearchedLocation.lon], 12);
+                            addPin(data[0].lat, data[0].lon, city.toUpperCase(), Math.floor(Math.random() * 30) + 65);
                         }
                     });
             }
         });
 
-        // Transcribe and Post
         function logFieldReport() {
-            if (!lastSearchedLocation) {
-                alert("Please search for a location first.");
-                return;
-            }
+            if (!lastSearchedLocation) { alert("Please search for a location first."); return; }
             const threat = document.getElementById('threat-type').value;
-            const risk = Math.floor(Math.random() * 20) + 80; // Field reports are usually high risk (80%+)
-            
             const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">!</span>`, iconSize: [35, 35] });
-            L.marker([lastSearchedLocation.lat, lastSearchedLocation.lon], { icon: icon })
-                .addTo(map)
-                .bindPopup(`<b style="color:black">FIELD REPORT: ${lastSearchedLocation.name}</b><br><span style="color:red">TYPE: ${threat}</span><br><span style="color:black">URGENCY: ${risk}%</span>`)
-                .openPopup();
-            
-            alert(`Intel Transmitted: ${threat} logged at ${lastSearchedLocation.name}`);
+            L.marker([lastSearchedLocation.lat, lastSearchedLocation.lon], { icon: icon }).addTo(map)
+                .bindPopup(`<b style="color:black">FIELD REPORT: ${lastSearchedLocation.name}</b><br><span style="color:red">TYPE: ${threat}</span>`).openPopup();
         }
 
         function addPin(lat, lon, name, risk) {
@@ -107,20 +131,18 @@
         }
 
         function triggerPanic() {
-            const emergencyContact = "911"; 
-            const message = encodeURIComponent("JSI EMERGENCY: Active threat detected. Monitor my status: " + window.location.href);
-            window.location.href = `sms:${emergencyContact}?&body=${message}`;
+            const message = encodeURIComponent("JSI EMERGENCY: Monitor my status: " + window.location.href);
+            window.location.href = `sms:911?&body=${message}`;
         }
 
         async function updateFeed() {
-            const fallback = ["[INTEL] SCANNING FOR LOCAL FIELD REPORTS...", "[SYSTEM] ANALYZING GLOBAL VELOCITY...", "[ALERT] DATA UPLINK STABLE..."];
             try {
                 const response = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await response.json();
                 const feeds = data.World.slice(0, 10).map(item => `[LIVE] ${item.title.toUpperCase()} --- `);
                 document.getElementById('news-ticker').innerText = feeds.join(" ");
             } catch (err) {
-                document.getElementById('news-ticker').innerText = fallback.join(" --- ");
+                document.getElementById('news-ticker').innerText = "[ALERT] SCANNING FOR LOCAL FIELD REPORTS... [SYSTEM] DATA UPLINK STABLE...";
             }
             document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
         }
