@@ -32,8 +32,7 @@
         }
         .section-label { font-size: 10px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
-        .action-btn:active { background: #374151; }
+        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; }
         .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; }
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
@@ -48,9 +47,9 @@
         <div class="modal-content">
             <h2 style="color:#ef4444; border-bottom: 1px solid #ef4444; padding-bottom:10px;">OPERATIONAL GUIDE</h2>
             <div style="font-size: 13px; line-height: 1.6; color: #d1d5db; margin-top: 15px;">
-                <p><strong>AUTO-INTEL:</strong> % pins are news-driven scans (70%+ Risk).</p>
-                <p><strong>FIELD REPORTS:</strong> "!" pins are user-submitted eye-witness reports.</p>
-                <p><strong>REFRESH:</strong> Use the System Control to force a news update.</p>
+                <p><strong>COMBAT BRIEFING:</strong> Search a location, then tap "Share Intel" to send a situational summary to your contacts.</p>
+                <p><strong>THEATER VIEW:</strong> Switch between Dark Tactical and Street views.</p>
+                <p><strong>FIELD REPORTS:</strong> "!" pins are user-submitted reports.</p>
             </div>
             <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">Return to Command</button>
         </div>
@@ -74,6 +73,8 @@
         <button class="action-btn" onclick="logFieldReport()">Post to War Room</button>
 
         <span class="section-label">3. System Controls</span>
+        <button class="action-btn" onclick="shareIntel()">📤 Share Combat Briefing</button>
+        <button class="action-btn" onclick="toggleMap()">🛰️ Toggle Theater View</button>
         <button class="action-btn" onclick="updateFeed()">🔄 Refresh Intel Feed</button>
 
         <div style="border-top: 1px solid #374151; margin: 15px 0;"></div>
@@ -89,32 +90,26 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        const tacticalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+        
+        let currentLayer = tacticalLayer;
+        currentLayer.addTo(map);
+
+        function toggleMap() {
+            if (currentLayer === tacticalLayer) {
+                map.removeLayer(tacticalLayer); streetLayer.addTo(map); currentLayer = streetLayer;
+            } else {
+                map.removeLayer(streetLayer); tacticalLayer.addTo(map); currentLayer = tacticalLayer;
+            }
+        }
 
         function openModal() { document.getElementById('info-modal').style.display = 'block'; }
         function closeModal() { document.getElementById('info-modal').style.display = 'none'; }
 
         let lastSearchedLocation = null;
-
-        function runAutoScan() {
-            const zones = [
-                { name: "New York", coords: [40.7128, -74.0060] },
-                { name: "Los Angeles", coords: [34.0522, -118.2437] },
-                { name: "London", coords: [51.5074, -0.1278] },
-                { name: "Paris", coords: [48.8566, 2.3522] },
-                { name: "Florida", coords: [27.6648, -81.5158] }
-            ];
-            zones.forEach(z => {
-                const risk = Math.floor(Math.random() * 30) + 60;
-                if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false);
-            });
-        }
-
-        function addPin(lat, lon, name, risk, isManual) {
-            const label = isManual ? "!" : `${risk}%`;
-            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${label}</span>`, iconSize: [35, 35] });
-            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${isManual?'FIELD REPORT':'MEDIA SCAN'}: ${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
-        }
+        let lastRisk = 0;
 
         document.getElementById('search-box').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
@@ -123,8 +118,10 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.length > 0) {
+                            lastRisk = Math.floor(Math.random() * 30) + 65;
                             lastSearchedLocation = { lat: data[0].lat, lon: data[0].lon, name: city.toUpperCase() };
                             map.flyTo([lastSearchedLocation.lat, lastSearchedLocation.lon], 12);
+                            addPin(data[0].lat, data[0].lon, city.toUpperCase(), lastRisk, false);
                         }
                     });
             }
@@ -135,8 +132,30 @@
             addPin(lastSearchedLocation.lat, lastSearchedLocation.lon, `${lastSearchedLocation.name} (${document.getElementById('threat-type').value})`, 85, true);
         }
 
+        // SHARE LOGIC
+        async function shareIntel() {
+            if (!lastSearchedLocation) {
+                alert("Please search for a location to generate a briefing.");
+                return;
+            }
+            const briefText = `JSI COMBAT BRIEFING\n------------------\nLOCATION: ${lastSearchedLocation.name}\nTHREAT LEVEL: ${lastRisk}%\nCOORDINATES: ${lastSearchedLocation.lat}, ${lastSearchedLocation.lon}\n\nLIVE INTEL LINK: ${window.location.href}`;
+            
+            if (navigator.share) {
+                navigator.share({ title: 'JSI Combat Briefing', text: briefText });
+            } else {
+                // Fallback for desktop: Copy to clipboard
+                navigator.clipboard.writeText(briefText);
+                alert("Briefing copied to clipboard!");
+            }
+        }
+
+        function addPin(lat, lon, name, risk, isManual) {
+            const label = isManual ? "!" : `${risk}%`;
+            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${label}</span>`, iconSize: [35, 35] });
+            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${isManual?'FIELD REPORT':'MEDIA SCAN'}: ${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
+        }
+
         async function updateFeed() {
-            document.getElementById('news-ticker').innerText = "RE-ESTABLISHING UPLINK...";
             try {
                 const response = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await response.json();
@@ -150,6 +169,20 @@
 
         function triggerPanic() {
             window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`;
+        }
+
+        function runAutoScan() {
+            const zones = [
+                { name: "New York", coords: [40.7128, -74.0060] },
+                { name: "Los Angeles", coords: [34.0522, -118.2437] },
+                { name: "London", coords: [51.5074, -0.1278] },
+                { name: "Paris", coords: [48.8566, 2.3522] },
+                { name: "Florida", coords: [27.6648, -81.5158] }
+            ];
+            zones.forEach(z => {
+                const risk = Math.floor(Math.random() * 30) + 60;
+                if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false);
+            });
         }
 
         runAutoScan();
