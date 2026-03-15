@@ -9,26 +9,32 @@
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         #map { position: absolute; top: 35px; bottom: 46px; left: 0; right: 0; z-index: 1; background: #000; cursor: crosshair; }
+        
+        /* Access Gate */
         #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
         .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
+
+        /* Ticker HUD */
         #news-bulletin-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; }
         .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; position: relative; white-space: nowrap; border-right: 1px solid white; }
         .news-ticker-move { white-space: nowrap; animation: ticker-news 90s linear infinite; display: flex; }
         .news-item { margin-right: 50px; text-decoration: none; color: inherit; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* Actions */
         #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
         .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
-        
+
+        /* Tactical Pins */
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 30px; height: 30px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; white-space: nowrap; text-transform: uppercase; }
         .intel-link { display: block; background: #eee; color: #000 !important; font-size: 10px; padding: 8px; margin-top: 5px; text-align: center; font-weight: bold; text-decoration: none; border-radius: 3px; border-left: 4px solid #ef4444; }
-        
-        /* User "I'M HERE" Marker */
-        .user-pulse { width: 15px; height: 15px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 10px #3b82f6; animation: pulse-anim 2s infinite; }
-        @keyframes pulse-anim { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.3); opacity: 0.5; } 100% { transform: scale(0.9); opacity: 1; } }
 
-        /* Briefcase UI */
+        /* User Location "I'M HERE" */
+        .user-pulse { width: 15px; height: 15px; background: #3b82f6; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 12px #3b82f6; animation: pulse-anim 2s infinite; }
+        @keyframes pulse-anim { 0% { transform: scale(0.95); opacity: 1; } 70% { transform: scale(1.4); opacity: 0.4; } 100% { transform: scale(0.95); opacity: 1; } }
+
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 300px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 6000; transition: 0.4s; padding: 20px; overflow-y: auto; }
         #briefcase-sidebar.open { right: 0; }
         .case-entry { background: #111; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 11px; }
@@ -37,9 +43,9 @@
 <body>
 
     <div id="access-gate">
-        <div style="font-size:24px; font-weight:bold; color:white;">שמע ישראל ה' אלוהינו ה'</div>
+        <div style="font-size:24px; font-weight:bold; color:white; letter-spacing:1px;">שמע ישראל ה' אלוהינו ה'</div>
         <input type="text" id="gate-key" class="gate-input" placeholder="____" autocomplete="off">
-        <button onclick="manualUnlock()" style="background:#ef4444; color:white; padding:10px 25px; font-weight:900; border-radius:4px;">ACCESS UPLINK</button>
+        <button onclick="manualUnlock()" style="background:#ef4444; color:white; padding:12px 30px; font-weight:900; border-radius:4px; margin-top:10px;">ESTABLISH UPLINK</button>
     </div>
 
     <div id="news-bulletin-wrap">
@@ -59,11 +65,11 @@
 
     <div id="briefcase-sidebar">
         <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
-            <h2 class="text-red-500 font-black text-xs">OPERATOR BRIEFCASE</h2>
-            <button onclick="toggleBriefcase()" class="text-white font-bold">×</button>
+            <h2 class="text-red-500 font-black text-xs uppercase tracking-widest">Operator Briefcase</h2>
+            <button onclick="toggleBriefcase()" class="text-white font-bold text-xl">×</button>
         </div>
         <div id="case-list"></div>
-        <button onclick="clearBriefcase()" class="w-full bg-red-600 text-[10px] font-bold py-2 mt-4 uppercase">Wipe Briefcase Data</button>
+        <button onclick="clearBriefcase()" class="w-full bg-red-600 text-[10px] font-bold py-3 mt-4 uppercase tracking-widest">Wipe Memory</button>
     </div>
 
     <div id="ticker-container">
@@ -75,18 +81,18 @@
 
     <div id="report-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#0a0a0a; border:1px solid #333; width:100%; max-width:400px; padding:25px; border-top:5px solid #ef4444;">
-            <h2 class="text-white font-black uppercase">TRANSMIT INTEL</h2>
+            <h2 class="text-white font-black uppercase text-xl">Transmit Intel</h2>
             <p id="resolved-address" style="color:#ef4444; font-size:10px; margin-top:5px; font-family:monospace; font-weight:bold;"></p>
-            <input type="text" id="report-loc" placeholder="Optional Label" style="width:100%; background:#111; border:1px solid #444; color:white; padding:12px; margin-top:10px; outline:none;">
-            <select id="report-type" style="width:100%; background:#111; border:1px solid #444; color:white; padding:12px; margin-top:10px;">
+            <input type="text" id="report-loc" placeholder="Optional Label" style="width:100%; background:#111; border:1px solid #444; color:white; padding:15px; margin-top:10px; outline:none; font-size:12px;">
+            <select id="report-type" style="width:100%; background:#111; border:1px solid #444; color:white; padding:15px; margin-top:10px; font-size:12px;">
                 <option>ANTI-SEMITIC INCIDENT</option>
                 <option>PROTEST / RIOT</option>
                 <option>HOSTILE ACTIVITY</option>
                 <option>MILITARY MOVEMENT</option>
             </select>
-            <div class="flex gap-2 mt-6">
-                <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-3 font-bold uppercase text-[10px]">Abort</button>
-                <button onclick="submitIntel()" class="flex-1 bg-red-600 py-3 font-bold uppercase text-[10px]">Transmit</button>
+            <div class="flex gap-3 mt-8">
+                <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-4 font-bold uppercase text-[10px] tracking-widest">Abort</button>
+                <button onclick="submitIntel()" class="flex-1 bg-red-600 py-4 font-bold uppercase text-[10px] tracking-widest">Transmit</button>
             </div>
         </div>
     </div>
@@ -94,9 +100,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const JERUSALEM = [31.7683, 35.2137];
-        const DISCORD_WEBHOOK_URL = "PASTE_YOUR_WEBHOOK_HERE";
-
         const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(JERUSALEM, 3);
+        
         const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
         const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
         
@@ -109,69 +114,68 @@
 
         function manualUnlock() {
             if (document.getElementById('gate-key').value.trim() === 'אחד') {
-                document.getElementById('access-gate').style.opacity = '0';
+                const gate = document.getElementById('access-gate');
+                gate.style.opacity = '0';
                 setTimeout(() => { 
-                    document.getElementById('access-gate').style.display = 'none'; 
-                    map.invalidateSize();
+                    gate.style.display = 'none'; 
+                    map.invalidateSize(); // Fixes gray map bug
                     fetchLiveNews();
                     loadBriefcase();
                 }, 800);
             }
         }
 
-        // --- FIXED DAY/NIGHT TOGGLE ---
+        // --- LAYER TOGGLE ---
         function toggleMapMode() {
             const btn = document.getElementById('day-night-btn');
             if (isDarkMode) {
-                map.removeLayer(darkTiles);
-                lightTiles.addTo(map);
-                btn.innerHTML = "<span>🌙</span>NIGHT";
-                btn.style.background = "#ddd";
-                btn.style.color = "#000";
-                isDarkMode = false;
+                map.removeLayer(darkTiles); lightTiles.addTo(map);
+                btn.innerHTML = "<span>🌙</span>NIGHT"; btn.style.background = "#ddd"; btn.style.color = "#000"; isDarkMode = false;
             } else {
-                map.removeLayer(lightTiles);
-                darkTiles.addTo(map);
-                btn.innerHTML = "<span>🌞</span>DAY";
-                btn.style.background = "#333";
-                btn.style.color = "#fff";
-                isDarkMode = true;
+                map.removeLayer(lightTiles); darkTiles.addTo(map);
+                btn.innerHTML = "<span>🌞</span>DAY"; btn.style.background = "#333"; btn.style.color = "#fff"; isDarkMode = true;
             }
         }
 
-        // --- FIXED SHARE BUTTON ---
+        // --- DYNAMIC SHARE PAYLOAD ---
         function shareSite() {
-            const shareText = "JSI TACTICAL MONITOR | Access Key: אחד";
+            const siteUrl = window.location.href.split('?')[0];
+            const msg = `⚠️ JSI TACTICAL MONITOR | LIVE UPLINK\n\nLink: Jewish Safety Index (${siteUrl})\nPass: אחד`;
+            
             if (navigator.share) {
-                navigator.share({ title: 'JSI Monitor', text: shareText, url: window.location.href });
+                navigator.share({ title: 'JSI Tactical', text: msg }).catch(() => copyFallback(msg));
             } else {
-                navigator.clipboard.writeText(`${shareText} - ${window.location.href}`);
-                alert("Tactical Link Copied to Clipboard.");
+                copyFallback(msg);
             }
         }
+        function copyFallback(text) {
+            navigator.clipboard.writeText(text);
+            alert("Tactical Briefing Copied to Clipboard.");
+        }
 
-        // --- GPS UPLINK ---
+        // --- GPS LOGIC ---
         function locateUser() {
-            map.locate({setView: true, maxZoom: 13});
+            map.locate({setView: true, maxZoom: 14});
         }
 
         map.on('locationfound', function(e) {
             if (userMarker) map.removeLayer(userMarker);
             const userIcon = L.divIcon({ className: 'user-pulse', iconSize: [15, 15] });
-            userMarker = L.marker(e.latlng, {icon: userIcon}).addTo(map).bindPopup("<b>I'M HERE</b>").openPopup();
+            userMarker = L.marker(e.latlng, {icon: userIcon, zIndexOffset: 1000}).addTo(map);
+            userMarker.bindPopup("<b style='color:#3b82f6;'>I'M HERE</b>").openPopup();
         });
 
-        map.on('locationerror', function() { alert("GPS Denied. (Requires HTTPS)"); });
+        map.on('locationerror', function() { alert("Signal Denied. Ensure site is HTTPS and location is allowed."); });
 
-        // Map Click Handling
+        // --- CLICK & REPORT ---
         map.on('click', async function(e) {
             tappedCoords = e.latlng;
-            document.getElementById('resolved-address').innerText = "IDENTIFYING...";
-            openReport(true);
+            document.getElementById('resolved-address').innerText = "LOCKING SECTOR...";
+            openReport();
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
                 const data = await res.json();
-                tappedAddress = data.address.city || data.address.town || data.address.country || "UNKNOWN";
+                tappedAddress = data.address.city || data.address.town || data.address.country || "COORDINATE LOCK";
                 document.getElementById('resolved-address').innerText = `SECTOR: ${tappedAddress.toUpperCase()}`;
             } catch (err) { tappedAddress = "MARKED POINT"; }
         });
@@ -179,28 +183,16 @@
         async function submitIntel() {
             const userLabel = document.getElementById('report-loc').value;
             const type = document.getElementById('report-type').value;
-            let lat, lon, finalName;
-
-            if (tappedCoords) {
-                lat = tappedCoords.lat; lon = tappedCoords.lng;
-                finalName = (userLabel || tappedAddress).toUpperCase();
-            } else if (userLabel) {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${userLabel}`);
-                const data = await res.json();
-                if(data[0]) { lat = parseFloat(data[0].lat); lon = parseFloat(data[0].lon); finalName = userLabel.toUpperCase(); }
-                else return;
-            } else return;
+            if (!tappedCoords) return;
+            
+            const lat = tappedCoords.lat; 
+            const lon = tappedCoords.lng;
+            const finalName = (userLabel || tappedAddress).toUpperCase();
 
             saveToBriefcase({ name: finalName, type, lat, lon });
             dropPin(finalName, type, lat, lon);
             
-            if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
-                fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ embeds: [{ title: `🚨 INTEL: ${finalName}`, color: 15548997, fields: [{ name: "Threat", value: type, inline: true }, { name: "GPS", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, inline: true }], timestamp: new Date() }] })
-                });
-            }
-
-            map.flyTo([lat, lon], 10);
+            map.flyTo([lat, lon], 12);
             closeReport();
             document.getElementById('report-loc').value = "";
         }
@@ -209,9 +201,10 @@
             const icon = L.divIcon({ html: `<div class="pin-blob">!</div><div class="pin-label">${name}</div>`, className: 'custom-icon' });
             const marker = L.marker([lat, lon], {icon}).addTo(map);
             const newsLink = `https://www.google.com/search?q=${encodeURIComponent(name)}+breaking+news&tbm=nws`;
-            marker.bindPopup(`<div style="color:#000;"><b>${name}</b><br><div style="font-size:9px;color:red;">${type}</div><a href="${newsLink}" target="_blank" class="intel-link">TOP 10 NEWS</a></div>`);
+            marker.bindPopup(`<div style="color:#000; width:150px;"><b>${name}</b><br><div style="font-size:9px;color:red;font-weight:bold;">${type}</div><a href="${newsLink}" target="_blank" class="intel-link">SITREP NEWS</a></div>`);
         }
 
+        // --- PERSISTENCE ---
         function saveToBriefcase(item) {
             let items = JSON.parse(localStorage.getItem('jsi_case')) || [];
             items.push(item);
@@ -228,7 +221,7 @@
         function renderBriefcase() {
             let items = JSON.parse(localStorage.getItem('jsi_case')) || [];
             const list = document.getElementById('case-list');
-            list.innerHTML = items.map(i => `<div class="case-entry"><b>${i.name}</b><br>${i.type}</div>`).join('');
+            list.innerHTML = items.map(i => `<div class="case-entry"><b>${i.name}</b><br><span style="color:#ef4444">${i.type}</span></div>`).join('');
         }
 
         function clearBriefcase() { localStorage.removeItem('jsi_case'); location.reload(); }
@@ -236,7 +229,7 @@
 
         async function fetchLiveNews() {
             try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=unrest+conflict+israel+iran&hl=en-US&gl=US&ceid=US:en')}`);
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=unrest+conflict+israel&hl=en-US&gl=US&ceid=US:en')}`);
                 const data = await res.json();
                 if(data.items) {
                     const html = data.items.slice(0, 10).map(i => `<a href="${i.link}" target="_blank" class="news-item">[ INTEL: ${i.title.toUpperCase()} ]</a>`).join(' • ');
@@ -245,8 +238,8 @@
             } catch (e) { document.getElementById('live-news-ticker').innerText = "SIGNAL DELAYED..."; }
         }
 
-        function openReport(isTap = false) { document.getElementById('report-modal').style.display = 'flex'; }
-        function closeReport() { document.getElementById('report-modal').style.display = 'none'; }
+        function openReport() { document.getElementById('report-modal').style.display = 'flex'; }
+        function closeReport() { document.getElementById('report-modal').style.display = 'none'; tappedCoords = null; }
     </script>
 </body>
 </html>
