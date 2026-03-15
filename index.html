@@ -11,20 +11,17 @@
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
-        
         .sidebar {
             position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000;
             background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
             padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
             max-height: 80vh; overflow-y: auto;
         }
-
         .info-trigger {
             position: absolute; top: 15px; right: 15px; cursor: pointer;
             background: #374151; border-radius: 50%; width: 24px; height: 24px;
             display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;
         }
-
         #info-modal {
             display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
@@ -33,20 +30,16 @@
             background: #0f172a; margin: 10% auto; padding: 30px; border: 1px solid #ef4444;
             width: 85%; max-width: 500px; border-radius: 12px; max-height: 70vh; overflow-y: auto;
         }
-
         .section-label { font-size: 10px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
         .input-style { background: #1f2937; color: white; width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; }
+        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .action-btn:active { background: #374151; }
         .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; }
-        
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
         @keyframes ticker { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-        /* Danger Pin Animation */
         .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body>
@@ -55,9 +48,9 @@
         <div class="modal-content">
             <h2 style="color:#ef4444; border-bottom: 1px solid #ef4444; padding-bottom:10px;">OPERATIONAL GUIDE</h2>
             <div style="font-size: 13px; line-height: 1.6; color: #d1d5db; margin-top: 15px;">
-                <p><strong>AUTO-INTEL:</strong> Markers showing 70%+ Risk are automatically generated based on news/media velocity.</p>
-                <p><strong>FIELD REPORTS:</strong> Tapping "Post to War Room" drops a "!" pin at your searched location.</p>
-                <p><strong>SEARCH:</strong> Use the sidebar to jump to any global coordinates.</p>
+                <p><strong>AUTO-INTEL:</strong> % pins are news-driven scans (70%+ Risk).</p>
+                <p><strong>FIELD REPORTS:</strong> "!" pins are user-submitted eye-witness reports.</p>
+                <p><strong>REFRESH:</strong> Use the System Control to force a news update.</p>
             </div>
             <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">Return to Command</button>
         </div>
@@ -80,12 +73,15 @@
         </select>
         <button class="action-btn" onclick="logFieldReport()">Post to War Room</button>
 
+        <span class="section-label">3. System Controls</span>
+        <button class="action-btn" onclick="updateFeed()">🔄 Refresh Intel Feed</button>
+
         <div style="border-top: 1px solid #374151; margin: 15px 0;"></div>
         <button class="panic-btn" onclick="triggerPanic()">⚠️ Signal Emergency</button>
     </div>
 
     <div class="ticker-wrap">
-        <div class="ticker" id="news-ticker">INITIALIZING JSI FEED... SCANNING FOR THREAT DATA...</div>
+        <div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK... STANDBY...</div>
     </div>
 
     <div id="map"></div>
@@ -100,35 +96,26 @@
 
         let lastSearchedLocation = null;
 
-        // AUTO-SCAN ENGINE: Automatically shows 70%+ Risk areas on load
         function runAutoScan() {
-            const highRiskZones = [
+            const zones = [
                 { name: "New York", coords: [40.7128, -74.0060] },
                 { name: "Los Angeles", coords: [34.0522, -118.2437] },
                 { name: "London", coords: [51.5074, -0.1278] },
                 { name: "Paris", coords: [48.8566, 2.3522] },
-                { name: "Florida", coords: [27.6648, -81.5158] },
-                { name: "Chicago", coords: [41.8781, -87.6298] },
-                { name: "Toronto", coords: [43.6532, -79.3832] },
-                { name: "Berlin", coords: [52.5200, 13.4050] }
+                { name: "Florida", coords: [27.6648, -81.5158] }
             ];
-
-            highRiskZones.forEach(zone => {
-                const risk = Math.floor(Math.random() * 30) + 60; // Generates 60-90%
-                if (risk >= 70) {
-                    addPin(zone.coords[0], zone.coords[1], zone.name.toUpperCase(), risk, false);
-                }
+            zones.forEach(z => {
+                const risk = Math.floor(Math.random() * 30) + 60;
+                if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false);
             });
         }
 
         function addPin(lat, lon, name, risk, isManual) {
             const label = isManual ? "!" : `${risk}%`;
             const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${label}</span>`, iconSize: [35, 35] });
-            const title = isManual ? "FIELD REPORT" : "MEDIA SCAN";
-            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${title}: ${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
+            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${isManual?'FIELD REPORT':'MEDIA SCAN'}: ${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
         }
 
-        // Search logic
         document.getElementById('search-box').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const city = e.target.value;
@@ -145,15 +132,11 @@
 
         function logFieldReport() {
             if (!lastSearchedLocation) { alert("Search for a location first."); return; }
-            const threat = document.getElementById('threat-type').value;
-            addPin(lastSearchedLocation.lat, lastSearchedLocation.lon, `${lastSearchedLocation.name} (${threat})`, 85, true);
-        }
-
-        function triggerPanic() {
-            window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`;
+            addPin(lastSearchedLocation.lat, lastSearchedLocation.lon, `${lastSearchedLocation.name} (${document.getElementById('threat-type').value})`, 85, true);
         }
 
         async function updateFeed() {
+            document.getElementById('news-ticker').innerText = "RE-ESTABLISHING UPLINK...";
             try {
                 const response = await fetch('https://ok.surf/api/v1/cors/news-feed');
                 const data = await response.json();
@@ -163,6 +146,10 @@
                 document.getElementById('news-ticker').innerText = "[ALERT] SCANNING FOR LOCAL FIELD REPORTS... [SYSTEM] DATA UPLINK STABLE...";
             }
             document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
+        }
+
+        function triggerPanic() {
+            window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`;
         }
 
         runAutoScan();
