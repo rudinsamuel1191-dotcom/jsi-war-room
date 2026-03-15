@@ -6,188 +6,223 @@
     <title>JSI | War Room Command</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
-        #map { height: 100vh; width: 100%; background: #0b0e14; }
-        .sidebar {
-            position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000;
-            background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
-            padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
-            max-height: 80vh; overflow-y: auto;
-        }
-        .info-trigger {
-            position: absolute; top: 15px; right: 15px; cursor: pointer;
-            background: #374151; border-radius: 50%; width: 24px; height: 24px;
-            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;
-        }
-        #info-modal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
-        }
-        .modal-content {
-            background: #0f172a; margin: 10% auto; padding: 30px; border: 1px solid #ef4444;
-            width: 85%; max-width: 500px; border-radius: 12px; max-height: 70vh; overflow-y: auto;
-        }
-        .section-label { font-size: 10px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; }
-        .input-style { background: #1f2937; color: white; width: 100%; padding: 10px; border: 1px solid #4b5563; border-radius: 4px; font-size: 12px; margin-bottom: 12px; }
-        .action-btn { background: #1f2937; color: white; width: 100%; padding: 12px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 10px; }
-        .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; }
+        #map { height: 100vh; width: 100%; background: #0b0e14; transition: filter 0.5s; cursor: crosshair; }
+        .blurred { filter: blur(8px); pointer-events: none; }
+
+        /* Overlays */
+        #coords-display { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); z-index: 1002; background: rgba(0, 0, 0, 0.75); border: 1px solid #ef4444; padding: 5px 15px; border-radius: 20px; font-size: 10px; color: #ef4444; font-weight: bold; backdrop-filter: blur(5px); pointer-events: none; }
+        #personnel-count { position: absolute; top: 15px; right: 20px; z-index: 1002; background: rgba(11, 14, 20, 0.8); border: 1px solid #374151; padding: 5px 12px; border-radius: 4px; font-size: 10px; color: #10b981; font-weight: bold; }
+
+        .sidebar { position: absolute; top: 40px; left: 20px; width: 320px; z-index: 1000; background: rgba(11, 14, 20, 0.9); border: 1px solid #374151; padding: 20px; border-radius: 8px; backdrop-filter: blur(10px); max-height: 85vh; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; }
+        .sidebar.minimized { transform: translateX(-360px); opacity: 0; pointer-events: none; }
+        .menu-toggle { position: absolute; top: 40px; left: 20px; z-index: 1001; background: #ef4444; color: white; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; border: 1px solid #fff; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+
+        .section-label { font-size: 9px; color: #ef4444; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; margin-top: 15px; }
+        .input-style { background: #1f2937; color: white; width: 100%; padding: 8px; border: 1px solid #4b5563; border-radius: 4px; font-size: 11px; margin-bottom: 8px; outline: none; }
+        .action-btn { background: #1f2937; color: white; width: 100%; padding: 10px; text-transform: uppercase; font-weight: bold; border-radius: 4px; border: 1px solid #4b5563; cursor: pointer; margin-bottom: 8px; transition: 0.2s; font-size: 10px; }
+        .panic-btn { background: #b91c1c; color: white; width: 100%; padding: 15px; text-transform: uppercase; font-weight: 900; border-radius: 4px; border: 2px solid #ef4444; cursor: pointer; margin-top: 10px; }
+        
+        /* Lists */
+        .history-list { font-size: 10px; color: #9ca3af; margin-top: 5px; max-height: 100px; overflow-y: auto; border-left: 1px solid #ef4444; padding-left: 8px; }
+        .history-item { cursor: pointer; padding: 4px 0; border-bottom: 1px solid #1f2937; }
+        .history-item:hover { color: #ef4444; }
+
         .ticker-wrap { position: absolute; bottom: 0; width: 100%; height: 40px; background-color: rgba(0, 0, 0, 0.9); border-top: 2px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
         .ticker { display: inline-block; white-space: nowrap; animation: ticker 90s linear infinite; font-weight: bold; color: #ef4444; font-size: 14px; }
         @keyframes ticker { 0% { transform: translate3d(100%, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-        .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite; }
+
+        .danger-pin { background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 0 50%; color: white; font-weight: 800; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); animation: pulse 2s infinite; }
         .pin-text { transform: rotate(-45deg); }
     </style>
 </head>
 <body>
 
-    <div id="info-modal">
-        <div class="modal-content">
-            <h2 style="color:#ef4444; border-bottom: 1px solid #ef4444; padding-bottom:10px;">OPERATIONAL GUIDE</h2>
-            <div style="font-size: 13px; line-height: 1.6; color: #d1d5db; margin-top: 15px;">
-                <p><strong>COMBAT BRIEFING:</strong> Search a location, then tap "Share Intel" to send a situational summary to your contacts.</p>
-                <p><strong>THEATER VIEW:</strong> Switch between Dark Tactical and Street views.</p>
-                <p><strong>FIELD REPORTS:</strong> "!" pins are user-submitted reports.</p>
-            </div>
-            <button class="action-btn" style="margin-top:20px;" onclick="closeModal()">Return to Command</button>
+    <div id="disclaimer-overlay" style="position:fixed; z-index:3000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center;">
+        <div style="background:#0f172a; border:2px solid #ef4444; padding:40px; width:90%; max-width:450px; border-radius:12px; text-align:center;">
+            <h1 style="color:#ef4444; font-size:24px; margin-bottom:20px;">SECURITY PROTOCOL</h1>
+            <p style="font-size:14px; color:#d1d5db; margin-bottom:30px;">JSI is for situational awareness ONLY. Risk scores are algorithmic. In an emergency, contact authorities.</p>
+            <button class="panic-btn" onclick="acceptDisclaimer()">I UNDERSTAND</button>
         </div>
     </div>
 
-    <div class="sidebar">
-        <div class="info-trigger" onclick="openModal()">?</div>
-        <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
-        <p id="status-time" style="color: #9ca3af; font-size: 10px; margin-bottom: 20px;">SYSTEM ACTIVE</p>
-        
-        <span class="section-label">1. Locate Theater</span>
-        <input type="text" id="search-box" class="input-style" placeholder="Search City/State...">
+    <div id="coords-display">LAT: 0.00000 | LON: 0.00000</div>
+    <div id="personnel-count">🛰️ ACTIVE PERSONNEL: <span id="user-count">421</span></div>
 
-        <span class="section-label">2. Transcribe Intel</span>
+    <div id="menu-btn" class="menu-toggle" style="display:none;" onclick="toggleSidebar(event)">☰</div>
+
+    <div id="main-sidebar" class="sidebar">
+        <div style="position:absolute; top:15px; right:15px; cursor:pointer; color:#ef4444; font-weight:bold;" onclick="toggleSidebar(event)">✕</div>
+        <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
+        <p id="status-time" style="color: #9ca3af; font-size: 9px; margin-bottom: 10px;">SYSTEM ACTIVE</p>
+        
+        <span class="section-label">Target Acquisition</span>
+        <input type="text" id="search-box" class="input-style" placeholder="Search City/State...">
+        <div id="search-history" class="history-list"></div>
+
+        <span class="section-label">Report Intel</span>
         <select id="threat-type" class="input-style">
             <option>Physical Threat</option>
             <option>Protest/Unrest</option>
             <option>Vandalism</option>
             <option>Harassment</option>
         </select>
-        <button class="action-btn" onclick="logFieldReport()">Post to War Room</button>
+        <button class="action-btn" onclick="logFieldReport()">Submit Field Data</button>
 
-        <span class="section-label">3. System Controls</span>
-        <button class="action-btn" onclick="shareIntel()">📤 Share Combat Briefing</button>
-        <button class="action-btn" onclick="toggleMap()">🛰️ Toggle Theater View</button>
-        <button class="action-btn" onclick="updateFeed()">🔄 Refresh Intel Feed</button>
+        <span class="section-label">Heatmap Palette</span>
+        <select id="heat-palette" class="input-style" onchange="updateHeatmapStyle()">
+            <option value="standard">Standard (Red/Blue)</option>
+            <option value="plasma">Plasma (High Contrast)</option>
+            <option value="monochrome">Ghost (White/Grey)</option>
+        </select>
+        <button class="action-btn" onclick="toggleHeatmap()">🔥 Toggle Heatmap</button>
 
-        <div style="border-top: 1px solid #374151; margin: 15px 0;"></div>
+        <span class="section-label">Field Manual</span>
+        <button class="action-btn" onclick="toggleHelp()">📖 Training & Manual</button>
+        <div id="help-box" style="display:none; font-size: 10px; color: #9ca3af; padding: 5px;">
+            * Click history items to revisit sectors.<br>
+            * Field reports drop at map center.<br>
+            * Audio pings on every threat update.
+        </div>
+
+        <span class="section-label">Settings</span>
+        <button class="action-btn" id="audio-toggle" onclick="toggleAudio()">🔊 Audio: ON</button>
+        <button class="action-btn" onclick="shareIntel()">📤 Export Combat Briefing</button>
+
         <button class="panic-btn" onclick="triggerPanic()">⚠️ Signal Emergency</button>
     </div>
 
-    <div class="ticker-wrap">
-        <div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK... STANDBY...</div>
-    </div>
-
-    <div id="map"></div>
+    <div class="ticker-wrap"><div class="ticker" id="news-ticker">ESTABLISHING ENCRYPTED UPLINK...</div></div>
+    <div id="map" class="blurred"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     <script>
         const map = L.map('map', { zoomControl: false }).setView([35, -40], 3);
-        
-        const tacticalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
-        const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-        
-        let currentLayer = tacticalLayer;
-        currentLayer.addTo(map);
+        const tacticalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        function toggleMap() {
-            if (currentLayer === tacticalLayer) {
-                map.removeLayer(tacticalLayer); streetLayer.addTo(map); currentLayer = streetLayer;
-            } else {
-                map.removeLayer(streetLayer); tacticalLayer.addTo(map); currentLayer = tacticalLayer;
+        let heatLayer = null, heatData = [], audioEnabled = true;
+        const gradients = {
+            standard: {0.4: 'blue', 0.65: 'lime', 1: 'red'},
+            plasma: {0.2: 'purple', 0.5: 'orange', 1: 'yellow'},
+            monochrome: {0.3: 'grey', 0.7: 'silver', 1: 'white'}
+        };
+
+        function updatePersonnelCount() {
+            let count = parseInt(document.getElementById('user-count').innerText);
+            document.getElementById('user-count').innerText = Math.max(380, count + (Math.floor(Math.random() * 5) - 2));
+        }
+        setInterval(updatePersonnelCount, 5000);
+
+        function toggleHelp() {
+            const hb = document.getElementById('help-box');
+            hb.style.display = hb.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function updateHeatmapStyle() {
+            if (heatLayer) {
+                const style = document.getElementById('heat-palette').value;
+                heatLayer.setOptions({ gradient: gradients[style] });
             }
         }
 
-        function openModal() { document.getElementById('info-modal').style.display = 'block'; }
-        function closeModal() { document.getElementById('info-modal').style.display = 'none'; }
+        function toggleHeatmap() {
+            if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+            else { 
+                const style = document.getElementById('heat-palette').value;
+                heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, gradient: gradients[style]}).addTo(map); 
+            }
+        }
 
-        let lastSearchedLocation = null;
-        let lastRisk = 0;
+        function addToHistory(name, lat, lon) {
+            const container = document.getElementById('search-history');
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = `> ${name}`;
+            item.onclick = () => map.flyTo([lat, lon], 12);
+            container.prepend(item);
+            if (container.children.length > 5) container.lastChild.remove();
+        }
 
-        document.getElementById('search-box').addEventListener('keypress', function (e) {
+        document.getElementById('search-box').addEventListener('keypress', e => {
             if (e.key === 'Enter') {
-                const city = e.target.value;
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${city}`)
-                    .then(res => res.json())
-                    .then(data => {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${e.target.value}`)
+                    .then(res => res.json()).then(data => {
                         if (data.length > 0) {
-                            lastRisk = Math.floor(Math.random() * 30) + 65;
-                            lastSearchedLocation = { lat: data[0].lat, lon: data[0].lon, name: city.toUpperCase() };
-                            map.flyTo([lastSearchedLocation.lat, lastSearchedLocation.lon], 12);
-                            addPin(data[0].lat, data[0].lon, city.toUpperCase(), lastRisk, false);
+                            const lat = data[0].lat, lon = data[0].lon, name = e.target.value.toUpperCase();
+                            map.flyTo([lat, lon], 12);
+                            addPin(lat, lon, name, Math.floor(Math.random() * 30) + 65, false);
+                            addToHistory(name, lat, lon);
                         }
                     });
             }
         });
 
-        function logFieldReport() {
-            if (!lastSearchedLocation) { alert("Search for a location first."); return; }
-            addPin(lastSearchedLocation.lat, lastSearchedLocation.lon, `${lastSearchedLocation.name} (${document.getElementById('threat-type').value})`, 85, true);
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playRadarPing() {
+            if (!audioEnabled) return;
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
         }
 
-        // SHARE LOGIC
-        async function shareIntel() {
-            if (!lastSearchedLocation) {
-                alert("Please search for a location to generate a briefing.");
-                return;
-            }
-            const briefText = `JSI COMBAT BRIEFING\n------------------\nLOCATION: ${lastSearchedLocation.name}\nTHREAT LEVEL: ${lastRisk}%\nCOORDINATES: ${lastSearchedLocation.lat}, ${lastSearchedLocation.lon}\n\nLIVE INTEL LINK: ${window.location.href}`;
-            
-            if (navigator.share) {
-                navigator.share({ title: 'JSI Combat Briefing', text: briefText });
-            } else {
-                // Fallback for desktop: Copy to clipboard
-                navigator.clipboard.writeText(briefText);
-                alert("Briefing copied to clipboard!");
-            }
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('audio-toggle').innerText = audioEnabled ? "🔊 Audio: ON" : "🔇 Audio: OFF";
         }
 
         function addPin(lat, lon, name, risk, isManual) {
-            const label = isManual ? "!" : `${risk}%`;
-            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${label}</span>`, iconSize: [35, 35] });
-            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${isManual?'FIELD REPORT':'MEDIA SCAN'}: ${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
+            const icon = L.divIcon({ className: 'danger-pin', html: `<span class="pin-text">${isManual?'!':risk+'%'}</span>`, iconSize: [35, 35] });
+            L.marker([lat, lon], { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${name}</b><br><span style="color:red">Risk: ${risk}%</span>`);
+            heatData.push([lat, lon, risk / 100]);
+            if (heatLayer) heatLayer.setLatLngs(heatData);
+            playRadarPing();
+        }
+
+        function logFieldReport() {
+            const c = map.getCenter();
+            addPin(c.lat, c.lng, `FIELD REPORT (${document.getElementById('threat-type').value})`, 85, true);
+            addToHistory(`REPORT @ ${c.lat.toFixed(2)}`, c.lat, c.lng);
+        }
+
+        function toggleSidebar(e) {
+            if (e) e.stopPropagation();
+            const sidebar = document.getElementById('main-sidebar');
+            const menuBtn = document.getElementById('menu-btn');
+            sidebar.classList.toggle('minimized');
+            menuBtn.style.display = sidebar.classList.contains('minimized') ? 'flex' : 'none';
+        }
+
+        map.on('click', () => { if (!document.getElementById('main-sidebar').classList.contains('minimized')) toggleSidebar(); });
+        map.on('mousemove touchmove', e => {
+            document.getElementById('coords-display').innerText = `LAT: ${e.latlng.lat.toFixed(5)} | LON: ${e.latlng.lng.toFixed(5)}`;
+        });
+
+        function acceptDisclaimer() {
+            document.getElementById('disclaimer-overlay').style.display = 'none';
+            document.getElementById('map').classList.remove('blurred');
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
         async function updateFeed() {
             try {
-                const response = await fetch('https://ok.surf/api/v1/cors/news-feed');
-                const data = await response.json();
-                const feeds = data.World.slice(0, 10).map(item => `[LIVE] ${item.title.toUpperCase()} --- `);
-                document.getElementById('news-ticker').innerText = feeds.join(" ");
-            } catch (err) {
-                document.getElementById('news-ticker').innerText = "[ALERT] SCANNING FOR LOCAL FIELD REPORTS... [SYSTEM] DATA UPLINK STABLE...";
-            }
+                const res = await fetch('https://ok.surf/api/v1/cors/news-feed');
+                const data = await res.json();
+                document.getElementById('news-ticker').innerText = data.World.slice(0, 10).map(i => `[LIVE] ${i.title.toUpperCase()} --- `).join("");
+            } catch (err) { document.getElementById('news-ticker').innerText = "[SYSTEM] MONITORING CHANNELS..."; }
             document.getElementById('status-time').innerText = "LIVE // " + new Date().toLocaleTimeString();
         }
 
-        function triggerPanic() {
-            window.location.href = `sms:911?&body=${encodeURIComponent("JSI EMERGENCY: " + window.location.href)}`;
-        }
-
-        function runAutoScan() {
-            const zones = [
-                { name: "New York", coords: [40.7128, -74.0060] },
-                { name: "Los Angeles", coords: [34.0522, -118.2437] },
-                { name: "London", coords: [51.5074, -0.1278] },
-                { name: "Paris", coords: [48.8566, 2.3522] },
-                { name: "Florida", coords: [27.6648, -81.5158] }
-            ];
-            zones.forEach(z => {
-                const risk = Math.floor(Math.random() * 30) + 60;
-                if (risk >= 70) addPin(z.coords[0], z.coords[1], z.name.toUpperCase(), risk, false);
-            });
-        }
-
-        runAutoScan();
-        updateFeed();
-        setInterval(updateFeed, 300000);
+        function triggerPanic() { window.location.href = `sms:911?&body=JSI EMERGENCY: ${window.location.href}`; }
+        updateFeed(); setInterval(updateFeed, 300000);
     </script>
 </body>
 </html>
