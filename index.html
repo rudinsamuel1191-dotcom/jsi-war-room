@@ -7,8 +7,23 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #05070a; margin: 0; padding: 20px; font-family: monospace; color: white; }
-        #map { height: 600px; width: 100%; background: #0b0e14; border: 2px solid #1f2937; border-radius: 12px; }
+        body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow-x: hidden; }
+        #map { height: 100vh; width: 100%; background: #0b0e14; }
+        
+        /* UI Overlay */
+        .sidebar {
+            position: absolute; top: 20px; left: 20px; width: 320px; z-index: 1000;
+            background: rgba(11, 14, 20, 0.9); border: 1px solid #374151;
+            padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
+        }
+
+        .report-btn {
+            background: #ef4444; color: white; width: 100%; padding: 12px;
+            text-transform: uppercase; font-weight: bold; margin-top: 15px;
+            border-radius: 4px; transition: 0.3s; cursor: pointer;
+        }
+        .report-btn:hover { background: #b91c1c; box-shadow: 0 0 15px #ef4444; }
+
         .danger-pin {
             background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 50% 0;
             color: white; font-weight: 800; font-size: 10px; display: flex;
@@ -25,45 +40,47 @@
 </head>
 <body>
 
-    <div style="margin-bottom: 20px; border-left: 4px solid #ef4444; padding-left: 15px;">
-        <h1 style="color: #ef4444; margin: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 24px;">JSI Command Center</h1>
-        <p style="color: #9ca3af; font-size: 12px; margin-top: 5px;">LIVE MONITORING // JEWISH SAFETY INDEX // GLOBAL THEATER</p>
+    <div class="sidebar">
+        <h1 style="color: #ef4444; margin: 0; letter-spacing: 2px; font-size: 22px;">JSI COMMAND</h1>
+        <p style="color: #9ca3af; font-size: 10px; margin-bottom: 20px;">SYSTEM STATUS: ACTIVE</p>
+        
+        <div style="border-top: 1px solid #374151; padding-top: 15px;">
+            <label style="font-size: 12px; color: #9ca3af;">INCIDENT TYPE</label>
+            <select style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0;">
+                <option>Physical Threat</option>
+                <option>Vandalism</option>
+                <option>Protest / Unrest</option>
+                <option>Verbal Harassment</option>
+            </select>
+            
+            <label style="font-size: 12px; color: #9ca3af;">LOCATION (CITY/STATE)</label>
+            <input type="text" placeholder="e.g. Brooklyn, NY" style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border: none;">
+            
+            <button class="report-btn" onclick="alert('Incident Logged to Command Center')">Transmit Report</button>
+        </div>
     </div>
 
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map focused on the US
-        const map = L.map('map').setView([37.8, -96], 4);
+        const map = L.map('map', { zoomControl: false }).setView([37.8, -96], 4);
 
-        // Dark Theme Map Tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO'
-        }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Mock Data for the War Room Pins
         const locations = [
             { name: "New York", coords: [40.7128, -74.0060], score: 84 },
             { name: "California", coords: [36.7783, -119.4179], score: 71 },
-            { name: "Florida", coords: [27.6648, -81.5158], score: 52 },
-            { name: "London", coords: [51.5074, -0.1278], score: 65 },
-            { name: "Paris", coords: [48.8566, 2.3522], score: 78 }
+            { name: "Florida", coords: [27.6648, -81.5158], score: 52 }
         ];
 
-        // Draw the Red Pins
         locations.forEach(loc => {
             const icon = L.divIcon({
                 className: 'danger-pin',
                 html: `<span class="pin-text">${loc.score}%</span>`,
                 iconSize: [35, 35]
             });
-            L.marker(loc.coords, { icon: icon }).addTo(map).bindPopup(`
-                <div style="color: black;">
-                    <b style="font-size: 14px;">${loc.name}</b><br>
-                    <span style="color: #ef4444; font-weight: bold;">Risk Level: ${loc.score}%</span>
-                </div>
-            `);
+            L.marker(loc.coords, { icon: icon }).addTo(map).bindPopup(`<b style="color:black">${loc.name}: ${loc.score}% Danger</b>`);
         });
     </script>
 </body>
