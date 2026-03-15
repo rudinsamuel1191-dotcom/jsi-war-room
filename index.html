@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JSI | Sovereign Monitor</title>
+    <title>JSI | Sovereign Intelligence</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,7 +19,16 @@
         #user-counter { position: fixed; top: 12px; right: 15px; z-index: 6000; background: rgba(0,0,0,0.8); border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #ef4444; font-weight: bold; pointer-events: none; }
         .pulse-dot { display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; margin-right: 5px; animation: pulse 1s infinite; }
 
-        /* Pin & Popup Styling */
+        /* Floating Action Buttons */
+        #command-center { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 15px; }
+        .cmd-btn { width: 55px; height: 55px; background: #ef4444; border: 2px solid white; border-radius: 50%; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); transition: transform 0.2s; }
+        .cmd-btn:active { transform: scale(0.9); }
+
+        /* Modals */
+        #report-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #0a0a0a; border: 1px solid #ef4444; width: 100%; max-width: 400px; padding: 25px; border-top: 5px solid #ef4444; }
+
+        /* Pin & UI Components */
         .tactical-pin { border: 2px solid white; border-radius: 50% 50% 50% 0; width: 24px; height: 24px; transform: rotate(-45deg); background: #ef4444; box-shadow: 0 0 10px #ef4444; }
         .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; }
         .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 10px; margin-top: 10px; font-weight: bold; font-size: 11px; outline: none; }
@@ -45,11 +54,28 @@
         </div>
         <div id="news-bulletin-wrap">
             <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white; z-index:2;">FLASH</div>
-            <div class="news-ticker-move" id="live-news-ticker">FETCHING INTELLIGENCE STREAMS...</div>
+            <div class="news-ticker-move" id="live-news-ticker">PENDING DATA...</div>
         </div>
     </header>
 
     <div id="map"></div>
+
+    <div id="command-center">
+        <div class="cmd-btn" onclick="openGlobalReport()"><span>📡</span>REPORT</div>
+        <div class="cmd-btn" style="background:#3b82f6;" onclick="shareSite()"><span>🔗</span>SHARE</div>
+    </div>
+
+    <div id="report-modal">
+        <div class="modal-box">
+            <h2 class="text-white font-black uppercase text-xl mb-4">Transmit Field Intel</h2>
+            <input type="text" id="global-loc" placeholder="Location Name (City/Country)" class="intel-input">
+            <textarea id="global-intel" class="intel-input" placeholder="Describe the threat..." rows="4"></textarea>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeGlobalReport()" class="flex-1 bg-zinc-800 text-white font-bold py-3 text-[10px] uppercase">Abort</button>
+                <button onclick="submitGlobalThreat()" class="flex-1 bg-red-600 text-black font-black py-3 text-[10px] uppercase">Transmit</button>
+            </div>
+        </div>
+    </div>
 
     <div id="ticker-container">
         <div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
@@ -65,17 +91,15 @@
         const map = L.map('map', { zoomControl: false, attributionControl: false, tap: false }).setView([31.7, 35.2], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Counter Fluctuation
         setInterval(() => {
             const val = document.getElementById('count-val');
             val.innerText = Math.floor(4000 + Math.random() * 100);
         }, 3000);
 
-        // Mock News Data
         const newsStream = ["IRAN SECTOR: ENRICHMENT SPIKE DETECTED", "IDF MOBILIZING IN NORTHERN DISTRICT", "US CARRIER GROUP ENTERS RED SEA", "CYBER ATTACK MITIGATED ON TEL AVIV GRID"];
         document.getElementById('live-news-ticker').innerHTML = newsStream.map(n => `<span style="margin-right:100px;">[ ${n} ]</span>`).join('').repeat(2);
 
-        // MAP CLICK: DROPS PIN
+        // Map Click Drops Pin
         map.on('click', async function(e) {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
             const data = await res.json();
@@ -88,64 +112,70 @@
                 <div style="min-width:200px; padding:5px;">
                     <b style="color:#ef4444; text-transform:uppercase; letter-spacing:1px;">${sectorName}</b>
                     <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
-                    
                     <select class="intel-select" id="mode-${marker._leaflet_id}" onchange="toggleMenu(${marker._leaflet_id}, '${sectorName}', ${e.latlng.lat}, ${e.latlng.lng})">
                         <option value="">-- SELECT ACTION --</option>
                         <option value="news">📰 READ NEWS</option>
                         <option value="report">⚠️ REPORT THREAT</option>
                     </select>
-
                     <div id="content-${marker._leaflet_id}" class="mt-2"></div>
                 </div>
             `;
-
             marker.bindPopup(popupContent).openPopup();
         });
 
         function toggleMenu(id, sector, lat, lon) {
             const mode = document.getElementById(`mode-${id}`).value;
             const container = document.getElementById(`content-${id}`);
-
             if (mode === 'news') {
-                container.innerHTML = `
-                    <p style="font-size:10px; color:#888; margin-bottom:8px;">FETCHING 10 RELEVANT SOURCES...</p>
-                    <a href="https://www.google.com/search?q=${sector}+breaking+news+today&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS HUB</a>
-                `;
+                container.innerHTML = `<a href="https://www.google.com/search?q=${sector}+breaking+news+today&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS HUB</a>`;
             } else if (mode === 'report') {
-                container.innerHTML = `
-                    <textarea id="input-${id}" class="intel-input" placeholder="Enter threat details..." rows="2"></textarea>
-                    <button class="intel-btn" onclick="submitThreat(${id}, '${sector}', ${lat}, ${lon})">TRANSMIT TO HQ</button>
-                `;
-            } else {
-                container.innerHTML = "";
+                container.innerHTML = `<textarea id="input-${id}" class="intel-input" placeholder="Details..." rows="2"></textarea>
+                <button class="intel-btn" onclick="submitThreat(${id}, '${sector}', ${lat}, ${lon})">TRANSMIT</button>`;
             }
         }
 
         async function submitThreat(id, sector, lat, lon) {
             const text = document.getElementById(`input-${id}`).value;
-            if (!text) return alert("Field Intelligence Required.");
+            postToDiscord(`🚨 THREAT: ${sector.toUpperCase()}`, `GPS: ${lat}, ${lon}\nINTEL: ${text}`);
+            map.closePopup();
+        }
 
+        // Global Command Functions
+        function openGlobalReport() { document.getElementById('report-modal').style.display = 'flex'; }
+        function closeGlobalReport() { document.getElementById('report-modal').style.display = 'none'; }
+
+        async function submitGlobalThreat() {
+            const loc = document.getElementById('global-loc').value;
+            const intel = document.getElementById('global-intel').value;
+            if(!loc || !intel) return alert("All fields required.");
+            
+            await postToDiscord(`📡 MANUAL FIELD REPORT: ${loc.toUpperCase()}`, `OBSERVATION: ${intel}`);
+            closeGlobalReport();
+            document.getElementById('global-loc').value = "";
+            document.getElementById('global-intel').value = "";
+        }
+
+        async function postToDiscord(title, msg) {
             try {
                 await fetch(DISCORD_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        embeds: [{
-                            title: `🚨 THREAT REPORTED: ${sector.toUpperCase()}`,
-                            color: 15548997,
-                            fields: [
-                                { name: "Sector", value: sector, inline: true },
-                                { name: "GPS", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, inline: true },
-                                { name: "Intelligence", value: text }
-                            ],
-                            timestamp: new Date()
-                        }]
-                    })
+                    body: JSON.stringify({ embeds: [{ title, description: msg, color: 15548997, timestamp: new Date() }] })
                 });
-                alert("INTEL RECEIVED. OVERWATCH UPDATED.");
-                map.closePopup();
-            } catch (err) {
-                alert("UPLINK ERROR.");
+                alert("TRANSMISSION SUCCESSFUL.");
+            } catch (e) { alert("CONNECTION ERROR."); }
+        }
+
+        function shareSite() {
+            const shareData = {
+                title: 'JSI Sovereign Intelligence',
+                text: 'Access Tactical Overwatch. Sector Code: אחד',
+                url: window.location.href
+            };
+            if (navigator.share) {
+                navigator.share(shareData);
+            } else {
+                alert("Site link copied to clipboard.");
             }
         }
     </script>
