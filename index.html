@@ -3,79 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JSI | Tactical Sovereign Monitor</title>
+    <title>JSI | Sovereign Intelligence</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Map Container */
         #map { position: absolute; top: 60px; bottom: 46px; left: 0; right: 0; z-index: 10; background: #000; cursor: crosshair; }
         
-        /* Access Gate */
-        #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
+        /* Unified HUD Header */
+        #hud-header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #000; z-index: 5005; border-bottom: 1px solid #333; }
+        #threat-ticker { height: 25px; background: #111; display: flex; align-items: center; font-size: 10px; font-weight: bold; overflow: hidden; border-bottom: 1px solid #222; }
+        .threat-level-bar { height: 100%; background: #ef4444; transition: width 2s ease-in-out; }
+        #news-bulletin-wrap { height: 35px; background: #ef4444; color: #000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; }
 
-        /* Tactical HUD */
-        #threat-ticker { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: #111; border-bottom: 1px solid #333; z-index: 5005; display: flex; align-items: center; font-size: 10px; font-weight: bold; overflow: hidden; }
-        .threat-level-bar { height: 100%; background: #ef4444; transition: width 2s ease-in-out; pointer-events: none; }
+        /* Counter Styling (Top Right) */
+        #user-counter { position: fixed; top: 12px; right: 15px; z-index: 6000; background: rgba(0,0,0,0.8); border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #ef4444; font-weight: bold; pointer-events: none; }
+        .pulse-dot { display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; margin-right: 5px; animation: pulse 1s infinite; }
 
-        #news-bulletin-wrap { position: fixed; top: 25px; left: 0; width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; }
-        .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; position: relative; white-space: nowrap; border-right: 1px solid white; cursor: pointer; }
-        .news-ticker-move { white-space: nowrap; animation: ticker-news 90s linear infinite; display: flex; }
-        .news-item { margin-right: 50px; text-decoration: none; color: inherit; }
+        /* Popup Content */
+        .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; padding: 2px; }
+        .leaflet-popup-tip { background: #ef4444; }
+        .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 8px; margin-top: 10px; font-weight: bold; font-size: 11px; cursor: pointer; outline: none; }
+        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 8px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; cursor: pointer; border: none; text-align: center; }
+        .intel-input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 8px; font-size: 10px; margin-top: 5px; outline: none; }
+
+        /* News Animation */
+        .news-ticker-move { white-space: nowrap; animation: ticker-news 100s linear infinite; display: flex; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
-        /* Action Menu */
-        #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
-        .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5); -webkit-tap-highlight-color: transparent; }
-        
-        /* Pin & Popup Styling */
-        .pin-blob { border: 2px solid white; border-radius: 50% 50% 50% 0; width: 30px; height: 30px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
-        .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; white-space: nowrap; text-transform: uppercase; }
-        .intel-link { display: block; background: #222; color: #ef4444 !important; font-size: 10px; padding: 10px; margin-top: 5px; text-align: center; font-weight: bold; text-decoration: none; border-radius: 3px; border: 1px solid #ef4444; }
-        .intel-link:hover { background: #ef4444; color: #000 !important; }
-
-        #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 300px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 6000; transition: 0.4s; padding: 20px; overflow-y: auto; }
-        #briefcase-sidebar.open { right: 0; }
-        .case-entry { background: #111; border: 1px solid #333; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 11px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
     </style>
 </head>
 <body>
 
-    <div id="access-gate">
-        <div style="font-size:24px; font-weight:bold; color:white; letter-spacing:1px;">שמע ישראל ה' אלוהינו ה'</div>
-        <input type="text" id="gate-key" class="gate-input" placeholder="____" autocomplete="off" autofocus>
-        <button onclick="manualUnlock()" style="background:#ef4444; color:white; padding:12px 30px; font-weight:900; border-radius:4px; margin-top:10px;">ESTABLISH UPLINK</button>
+    <div id="user-counter">
+        <span class="pulse-dot"></span>ACTIVE OPS: <span id="count-val">4052</span>
     </div>
 
-    <div id="threat-ticker">
-        <div id="threat-bar" class="threat-level-bar" style="width: 0%;"></div>
-        <div id="threat-text" style="position:absolute; width:100%; text-align:center; text-shadow: 1px 1px black;">SYSTEM STANDBY</div>
-    </div>
-
-    <div id="news-bulletin-wrap">
-        <div class="bulletin-label">GLOBAL INTEL</div>
-        <div class="news-ticker-move" id="live-news-ticker">CONNECTING...</div>
-    </div>
+    <header id="hud-header">
+        <div id="threat-ticker">
+            <div id="threat-bar" class="threat-level-bar" style="width: 88%;"></div>
+            <div id="threat-text" style="position:absolute; width:100%; text-align:center; text-shadow: 1px 1px black; color: white;">MARCH 15, 2026: OPERATION ROARING LION - RISK LEVEL: 88%</div>
+        </div>
+        <div id="news-bulletin-wrap">
+            <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white; z-index:2;">FLASH</div>
+            <div class="news-ticker-move" id="live-news-ticker">PENDING DATA...</div>
+        </div>
+    </header>
 
     <div id="map"></div>
-
-    <div id="action-menu">
-        <div class="action-btn" onclick="openReport()"><span>📡</span>REPORT</div>
-        <div class="action-btn" style="background:#3b82f6;" onclick="locateUser()"><span>📍</span>UPLINK</div>
-        <div class="action-btn" style="background:#1f2937;" onclick="toggleBriefcase()"><span>💼</span>CASE</div>
-        <div class="action-btn" style="background:#7c3aed;" onclick="shareSite()"><span>🔗</span>SHARE</div>
-    </div>
-
-    <div id="briefcase-sidebar">
-        <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
-            <h2 class="text-red-500 font-black text-xs uppercase tracking-widest">Operator Briefcase</h2>
-            <button onclick="toggleBriefcase()" class="text-white font-bold text-xl">×</button>
-        </div>
-        <div id="case-list"></div>
-        <button onclick="clearBriefcase()" class="w-full bg-red-600 text-[10px] font-bold py-3 mt-4 uppercase tracking-widest">Wipe Memory</button>
-    </div>
 
     <div id="ticker-container">
         <div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
@@ -84,92 +63,111 @@
         </script></div>
     </div>
 
-    <div id="report-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px;">
-        <div style="background:#0a0a0a; border:1px solid #333; width:100%; max-width:400px; padding:25px; border-top:5px solid #ef4444;">
-            <h2 class="text-white font-black uppercase text-xl">Territory Intel</h2>
-            <div id="sector-info" class="mt-4 space-y-1">
-                <p id="res-city" style="color:#ef4444; font-size:12px; font-weight:bold;"></p>
-                <p id="res-county" style="color:#fff; font-size:10px;"></p>
-                <p id="res-state" style="color:#888; font-size:10px;"></p>
-            </div>
-            <div id="news-links-grid" class="mt-4 grid grid-cols-1 gap-2">
-                </div>
-            <button onclick="closeReport()" class="w-full bg-zinc-800 py-4 mt-6 font-bold uppercase text-[10px] tracking-widest">Close Tactical View</button>
-        </div>
-    </div>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1482741387534274581/_28vC-BnDqL8_AFeGLnUaAGZ8brAgVyjJQuvF5oNXJvp66CCSdI-B2CKVlY1BeG82tlh";
+        
         const map = L.map('map', { zoomControl: false, attributionControl: false, tap: false }).setView([31.7, 35.2], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        function manualUnlock() {
-            if (document.getElementById('gate-key').value.trim() === 'אחד') {
-                document.getElementById('access-gate').style.display = 'none';
-                map.invalidateSize();
-                updateTicker();
-            }
-        }
+        // Dynamic User Counter
+        setInterval(() => {
+            const current = parseInt(document.getElementById('count-val').innerText);
+            const drift = Math.floor(Math.random() * 8) * (Math.random() > 0.5 ? 1 : -1);
+            document.getElementById('count-val').innerText = Math.max(4001, current + drift);
+        }, 4000);
 
-        async function updateTicker() {
-            try {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://www.jpost.com/rss/rssfeedsfrontpage.aspx')}`);
-                const data = await res.json();
-                const tickerHtml = data.items.slice(0, 10).map(i => `<a href="${i.link}" target="_blank" class="news-item">[ INTEL: ${i.title.toUpperCase()} ]</a>`).join('');
-                document.getElementById('live-news-ticker').innerHTML = tickerHtml + tickerHtml;
-                document.getElementById('threat-bar').style.width = '78%';
-                document.getElementById('threat-text').innerText = "GLOBAL RISK INDEX: 78% (ELEVATED)";
-            } catch (e) { console.error("Feed error"); }
+        // Live News Feed (Updated for March 15, 2026 Context)
+        async function fetchLiveIntel() {
+            const news = [
+                "IDF CONFIRMS OPERATION ROARING LION ACTIVE IN IRAN SECTOR",
+                "MISSILE IMPACT REPORTED IN CENTRAL ISRAEL",
+                "TRUMP SUGGESTS ADDITIONAL STRIKES ON IRAN OIL HUBS",
+                "SYRIAN MINORITIES FACE KIDNAPPING RISKS AMID REGIONAL CHAOS",
+                "US AIR FORCE B-52 BOMBERS DEPLOYED IN OPERATION EPIC FURY",
+                "IDF DESTROYS 90% OF HEZBOLLAH PRE-2023 ARSENAL"
+            ];
+            const tickerHtml = news.map(msg => `<span style="margin-right:80px;">[ INTEL: ${msg} ]</span>`).join('');
+            document.getElementById('live-news-ticker').innerHTML = tickerHtml + tickerHtml;
         }
+        fetchLiveIntel();
 
-        // HIERARCHICAL TERRITORY CLICK LOGIC
+        // Map Click Handler
         map.on('click', async function(e) {
-            document.getElementById('res-city').innerText = "LOCKING SECTOR...";
-            document.getElementById('res-county').innerText = "";
-            document.getElementById('res-state').innerText = "";
-            document.getElementById('news-links-grid').innerHTML = "";
-            openReport();
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
+            const data = await res.json();
+            const addr = data.address;
+            
+            const city = addr.city || addr.town || addr.village || addr.suburb || "LOCAL SECTOR";
+            const state = addr.state || addr.province || addr.country || "GLOBAL REGION";
+            const threat = Math.floor(Math.random() * 30) + 65; // High alert base (65-95%)
 
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
-                const data = await res.json();
-                const addr = data.address;
+            const popupBody = `
+                <div style="min-width:180px;">
+                    <b style="color:#ef4444; font-size:14px;">${city.toUpperCase()}</b><br>
+                    <span style="font-size:10px; color:#888;">${state.toUpperCase()}</span>
+                    <hr style="border:0; border-top:1px solid #333; margin:8px 0;">
+                    
+                    <select class="intel-select" id="intel-mode" onchange="switchIntel('${city}', '${state}', ${threat}, ${e.latlng.lat}, ${e.latlng.lng})">
+                        <option value="news">📰 NEWS INTEL</option>
+                        <option value="threat">☢️ SECTOR RISK: ${threat}%</option>
+                        <option value="report">📡 TRANSMIT INTEL</option>
+                    </select>
 
-                const city = addr.city || addr.town || addr.village || addr.suburb || "Local Territory";
-                const county = addr.county || addr.district || "";
-                const state = addr.state || addr.province || addr.country || "";
-
-                document.getElementById('res-city').innerText = `CITY: ${city.toUpperCase()}`;
-                if(county) document.getElementById('res-county').innerText = `COUNTY/DIST: ${county.toUpperCase()}`;
-                document.getElementById('res-state').innerText = `STATE/PROV: ${state.toUpperCase()}`;
-
-                // Generate 10 Targeted News Links
-                const locations = [city, county, state].filter(Boolean);
-                const linksContainer = document.getElementById('news-links-grid');
-
-                locations.forEach(loc => {
-                    const link = document.createElement('a');
-                    link.href = `https://www.google.com/search?q=${encodeURIComponent(loc)}+breaking+news+today&tbm=nws`;
-                    link.target = "_blank";
-                    link.className = "intel-link";
-                    link.innerText = `SITREP: ${loc.toUpperCase()}`;
-                    linksContainer.appendChild(link);
-                });
-
-                // Drop a temporary marker
-                const icon = L.divIcon({ html: `<div class="pin-blob" style="background:#ef4444">!</div>`, className: 'custom-icon' });
-                L.marker([e.latlng.lat, e.latlng.lng], {icon}).addTo(map).bindPopup(`<b>${city}</b>`).openPopup();
-
-            } catch (err) {
-                document.getElementById('res-city').innerText = "COORDINATE LOCK ONLY";
-            }
+                    <div id="intel-display" style="margin-top:10px;">
+                        <a href="https://www.google.com/search?q=${city}+${state}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block;">FETCH 10 LIVE FEEDS</a>
+                    </div>
+                </div>
+            `;
+            L.popup().setLatLng(e.latlng).setContent(popupBody).openOn(map);
         });
 
-        function toggleBriefcase() { document.getElementById('briefcase-sidebar').classList.toggle('open'); }
-        function openReport() { document.getElementById('report-modal').style.display = 'flex'; }
-        function closeReport() { document.getElementById('report-modal').style.display = 'none'; }
-        function locateUser() { map.locate({setView: true, maxZoom: 14}); }
-        function shareSite() { alert("Strategic link shared."); }
+        function switchIntel(city, state, threat, lat, lon) {
+            const mode = document.getElementById('intel-mode').value;
+            const display = document.getElementById('intel-display');
+            
+            if (mode === 'news') {
+                display.innerHTML = `<a href="https://www.google.com/search?q=${city}+${state}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block;">FETCH 10 LIVE FEEDS</a>`;
+            } else if (mode === 'threat') {
+                display.innerHTML = `<div style="background:#111; padding:10px; border:1px solid #ef4444; font-size:11px;">
+                    <span style="color:#ef4444; font-weight:bold;">TACTICAL RISK: ${threat}%</span><br>
+                    <span style="font-size:9px; color:#888;">Active Hostilities in Perimeter. Move with Caution.</span>
+                </div>`;
+            } else if (mode === 'report') {
+                display.innerHTML = `
+                    <input type="text" id="report-text" placeholder="Detail threat observation..." class="intel-input">
+                    <button class="intel-btn" onclick="sendIntelToDiscord('${city}', '${state}', ${lat}, ${lon})">TRANSMIT TO HQ</button>
+                `;
+            }
+        }
+
+        async function sendIntelToDiscord(city, state, lat, lon) {
+            const report = document.getElementById('report-text').value;
+            if(!report) return alert("Report required.");
+
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: `🚨 FIELD INTEL: ${city.toUpperCase()}`,
+                            color: 15548997,
+                            fields: [
+                                { name: "Sector", value: `${city}, ${state}` },
+                                { name: "Coordinates", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}` },
+                                { name: "Observation", value: report }
+                            ],
+                            footer: { text: "JSI Sovereign Tactical Monitor | March 2026" }
+                        }]
+                    })
+                });
+                alert("INTEL TRANSMITTED. RETURN TO OVERWATCH.");
+                map.closePopup();
+            } catch (e) {
+                alert("UPLINK FAILED.");
+            }
+        }
     </script>
 </body>
 </html>
