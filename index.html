@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow-x: hidden; }
+        body { background-color: #05070a; margin: 0; font-family: 'Courier New', Courier, monospace; color: white; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e14; }
         
         /* UI Overlay */
@@ -17,10 +17,27 @@
             padding: 20px; border-radius: 8px; backdrop-filter: blur(10px);
         }
 
+        /* News Ticker */
+        .ticker-wrap {
+            position: absolute; bottom: 0; width: 100%; overflow: hidden;
+            height: 40px; background-color: rgba(0, 0, 0, 0.9);
+            border-top: 2px solid #ef4444; z-index: 1001;
+            display: flex; align-items: center;
+        }
+        .ticker {
+            display: inline-block; white-space: nowrap; padding-right: 100%;
+            animation: ticker 60s linear infinite; font-weight: bold; color: #ef4444;
+        }
+        .ticker-item { display: inline-block; padding: 0 50px; }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
         .report-btn {
             background: #ef4444; color: white; width: 100%; padding: 12px;
             text-transform: uppercase; font-weight: bold; margin-top: 15px;
-            border-radius: 4px; transition: 0.3s; cursor: pointer;
+            border-radius: 4px; transition: 0.3s; cursor: pointer; border: none;
         }
         .report-btn:hover { background: #b91c1c; box-shadow: 0 0 15px #ef4444; }
 
@@ -46,17 +63,27 @@
         
         <div style="border-top: 1px solid #374151; padding-top: 15px;">
             <label style="font-size: 12px; color: #9ca3af;">INCIDENT TYPE</label>
-            <select style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0;">
+            <select style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border-radius: 4px;">
                 <option>Physical Threat</option>
                 <option>Vandalism</option>
                 <option>Protest / Unrest</option>
                 <option>Verbal Harassment</option>
             </select>
             
-            <label style="font-size: 12px; color: #9ca3af;">LOCATION (CITY/STATE)</label>
-            <input type="text" placeholder="e.g. Brooklyn, NY" style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border: none;">
+            <label style="font-size: 12px; color: #9ca3af; margin-top: 10px; display: block;">LOCATION</label>
+            <input type="text" placeholder="e.g. Brooklyn, NY" style="background: #1f2937; color: white; width: 100%; padding: 8px; margin: 5px 0; border: none; border-radius: 4px;">
             
             <button class="report-btn" onclick="alert('Incident Logged to Command Center')">Transmit Report</button>
+        </div>
+    </div>
+
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span class="ticker-item">[FLASH] JSI SENSORS DETECT INCREASED ACTIVITY IN NORTH-EAST CORRIDOR...</span>
+            <span class="ticker-item">[UPDATE] PARIS RISK LEVEL ADJUSTED TO 78%...</span>
+            <span class="ticker-item">[LIVE] COMMUNITY REPORTS STREAMING FROM NEW YORK METRO AREA...</span>
+            <span class="ticker-item">[INFO] ALL PINS INDICATE DATA WITHIN LAST 24 HOURS...</span>
+            <span class="ticker-item">[ALERT] NEW VANDALISM REPORTED IN LONDON SUBURBS...</span>
         </div>
     </div>
 
@@ -64,14 +91,16 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map', { zoomControl: false }).setView([37.8, -96], 4);
+        const map = L.map('map', { zoomControl: false }).setView([30, 0], 2);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         const locations = [
             { name: "New York", coords: [40.7128, -74.0060], score: 84 },
             { name: "California", coords: [36.7783, -119.4179], score: 71 },
-            { name: "Florida", coords: [27.6648, -81.5158], score: 52 }
+            { name: "Florida", coords: [27.6648, -81.5158], score: 52 },
+            { name: "London", coords: [51.5074, -0.1278], score: 65 },
+            { name: "Paris", coords: [48.8566, 2.3522], score: 78 }
         ];
 
         locations.forEach(loc => {
