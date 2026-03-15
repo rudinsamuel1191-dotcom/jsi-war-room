@@ -11,24 +11,34 @@
         #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
         .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
         .gate-btn { background: #ef4444; color: white; padding: 12px 30px; font-weight: 900; border-radius: 4px; letter-spacing: 1px; transition: 0.3s; }
+        
         #map { position: absolute; top: 60px; bottom: 46px; left: 0; right: 0; z-index: 10; background: #000; cursor: crosshair; }
+        
+        /* HUD UI */
         #hud-header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #000; z-index: 5005; border-bottom: 1px solid #333; }
         #threat-ticker { height: 25px; background: #111; display: flex; align-items: center; font-size: 10px; font-weight: bold; overflow: hidden; }
         #news-bulletin-wrap { height: 35px; background: #ef4444; color: #000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; }
         #user-counter { position: fixed; top: 12px; right: 15px; z-index: 6000; background: rgba(0,0,0,0.8); border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #ef4444; font-weight: bold; pointer-events: none; }
         .pulse-dot { display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; margin-right: 5px; animation: pulse 1s infinite; }
+
+        /* Command Center (Right) */
         #command-center { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 12px; }
         .cmd-btn { width: 50px; height: 50px; background: #ef4444; border: 2px solid white; border-radius: 50%; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: 900; cursor: pointer; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+
+        /* Tactical D-Pad (Left) */
+        #d-pad { position: fixed; left: 15px; bottom: 65px; z-index: 5000; display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(2, 40px); gap: 5px; }
+        .pad-btn { background: rgba(0,0,0,0.8); border: 1px solid #ef4444; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border-radius: 4px; }
+        .pad-btn:active { background: #ef4444; color: black; }
+
+        /* Pins & Modals */
         .tactical-pin { border: 2px solid white; border-radius: 50% 50% 50% 0; width: 24px; height: 24px; transform: rotate(-45deg); background: #ef4444; box-shadow: 0 0 10px #ef4444; }
         .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; }
-        .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 10px; margin-top: 10px; font-weight: bold; font-size: 11px; outline: none; }
-        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 10px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; border: none; cursor: pointer; }
         .intel-input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 10px; font-size: 11px; margin-top: 10px; outline: none; }
-        #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
-        .news-ticker-move { white-space: nowrap; animation: ticker-news 100s linear infinite; display: flex; }
-        @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 10px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; border: none; cursor: pointer; }
         #report-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        
+        #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
@@ -46,15 +56,22 @@
     <header id="hud-header">
         <div id="threat-ticker">
             <div style="height:100%; background:#ef4444; width:88%;"></div>
-            <div style="position:absolute; width:100%; text-align:center; font-size:10px; text-shadow:1px 1px #000;">GLOBAL RISK LEVEL: 88% - HIGH ALERT</div>
+            <div style="position:absolute; width:100%; text-align:center; font-size:10px;">GLOBAL RISK LEVEL: 88% - HIGH ALERT</div>
         </div>
         <div id="news-bulletin-wrap">
-            <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white; z-index:2;">FLASH</div>
-            <div class="news-ticker-move" id="live-news-ticker">FETCHING INTELLIGENCE STREAMS...</div>
+            <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white;">FLASH</div>
+            <div id="live-news-ticker" style="white-space:nowrap; display:flex;">...UPLINKING...</div>
         </div>
     </header>
 
     <div id="map"></div>
+
+    <div id="d-pad">
+        <div style="grid-column: 2" class="pad-btn" onclick="panMap(0, 1)">▲</div>
+        <div style="grid-row: 2" class="pad-btn" onclick="panMap(-1, 0)">◀</div>
+        <div style="grid-row: 2" class="pad-btn" onclick="panMap(0, -1)">▼</div>
+        <div style="grid-row: 2" class="pad-btn" onclick="panMap(1, 0)">▶</div>
+    </div>
 
     <div id="command-center">
         <div class="cmd-btn" onclick="openGlobalReport()"><span>📡</span>REPORT</div>
@@ -64,7 +81,7 @@
 
     <div id="report-modal">
         <div class="bg-[#0a0a0a] border border-[#ef4444] w-full max-w-md p-6 border-t-[5px]">
-            <h2 class="text-white font-black uppercase text-xl mb-4">Manual Threat Entry</h2>
+            <h2 class="text-white font-black uppercase text-xl mb-4">Manual Intel</h2>
             <input type="text" id="global-loc" placeholder="Target Sector" class="intel-input">
             <textarea id="global-intel" class="intel-input" placeholder="Field Observations..." rows="4"></textarea>
             <div class="flex gap-2 mt-6">
@@ -84,7 +101,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1482741387534274581/_28vC-BnDqL8_AFeGLnUaAGZ8brAgVyjJQuvF5oNXJvp66CCSdI-B2CKVlY1BeG82tlh";
-        const map = L.map('map', { zoomControl: false, attributionControl: false, tap: false }).setView([31.7, 35.2], 3);
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([31.7, 35.2], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
         let markersLayer = L.layerGroup().addTo(map);
 
@@ -95,39 +112,31 @@
             }
         }
 
-        setInterval(() => { document.getElementById('count-val').innerText = Math.floor(4000 + Math.random() * 100); }, 3000);
-
-        const newsStream = ["NORTH SECTOR: HEZBOLLAH CELL NEUTRALIZED", "IDF ARMOR MOVING TOWARD RAFAH SECTOR", "US INTELLIGENCE: IRAN PREPARING RETALIATION", "TEL AVIV: CYBER DEFENSES AT 100%"];
-        document.getElementById('live-news-ticker').innerHTML = newsStream.map(n => `<span style="margin-right:100px;">[ ${n} ]</span>`).join('').repeat(2);
+        function panMap(x, y) { map.panBy([-x * 100, -y * 100]); }
+        function clearAllPins() { markersLayer.clearLayers(); }
 
         map.on('click', async function(e) {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
             const data = await res.json();
-            const sectorName = data.address.city || data.address.state || "UNKNOWN SECTOR";
+            const sector = data.address.city || data.address.state || "UNKNOWN";
             const pinIcon = L.divIcon({ className: 'custom-div-icon', html: "<div class='tactical-pin'></div>", iconSize: [24, 24], iconAnchor: [12, 24] });
-            const marker = L.marker(e.latlng, { icon: pinIcon }).addTo(markersLayer);
-            marker.bindPopup(`
-                <div style="min-width:200px; padding:5px;">
-                    <b style="color:#ef4444; text-transform:uppercase;">${sectorName}</b>
-                    <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
-                    <select class="intel-select" id="mode-${marker._leaflet_id}" onchange="toggleMenu(${marker._leaflet_id}, '${sectorName}', ${e.latlng.lat}, ${e.latlng.lng})">
-                        <option value="">-- ACTION --</option><option value="news">📰 NEWS</option><option value="report">⚠️ REPORT</option>
-                    </select>
-                    <div id="content-${marker._leaflet_id}" class="mt-2"></div>
-                </div>`).openPopup();
+            const m = L.marker(e.latlng, { icon: pinIcon }).addTo(markersLayer);
+            m.bindPopup(`<div style="min-width:180px;"><b class="text-red-500 uppercase">${sector}</b>
+            <select class="intel-select" onchange="const v=this.value; if(v==='n') window.open('https://www.google.com/search?q=${sector}+news&tbm=nws'); else if(v==='r') document.getElementById('r-'+${m._leaflet_id}).style.display='block';">
+            <option>-- ACTION --</option><option value="n">NEWS</option><option value="r">REPORT</option></select>
+            <div id="r-${m._leaflet_id}" style="display:none;"><textarea id="i-${m._leaflet_id}" class="intel-input" placeholder="Intel..."></textarea>
+            <button class="intel-btn" onclick="submitThreat(${m._leaflet_id}, '${sector}', ${e.latlng.lat}, ${e.latlng.lng})">SEND</button></div></div>`).openPopup();
         });
 
-        function toggleMenu(id, sector, lat, lon) {
-            const mode = document.getElementById(`mode-${id}`).value;
-            const container = document.getElementById(`content-${id}`);
-            if (mode === 'news') { container.innerHTML = `<a href="https://www.google.com/search?q=${sector}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS</a>`; }
-            else if (mode === 'report') { container.innerHTML = `<textarea id="input-${id}" class="intel-input" placeholder="Details..." rows="2"></textarea><button class="intel-btn" onclick="submitThreat(${id}, '${sector}', ${lat}, ${lon})">TRANSMIT</button>`; }
+        async function submitThreat(id, s, lat, lon) {
+            const txt = document.getElementById('i-'+id).value;
+            await postToDiscord(`🚨 FIELD THREAT: ${s}`, `GPS: ${lat}, ${lon}\nINTEL: ${txt}`);
+            map.closePopup();
         }
 
-        async function submitThreat(id, sector, lat, lon) {
-            const text = document.getElementById(`input-${id}`).value;
-            postToDiscord(`🚨 FIELD THREAT: ${sector.toUpperCase()}`, `GPS: ${lat}, ${lon}\nINTEL: ${text}`);
-            map.closePopup();
+        async function postToDiscord(title, msg) {
+            await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ embeds: [{ title, description: msg, color: 15548997, timestamp: new Date() }] }) });
+            alert("TRANSMITTED.");
         }
 
         function openGlobalReport() { document.getElementById('report-modal').style.display = 'flex'; }
@@ -136,21 +145,11 @@
             const loc = document.getElementById('global-loc').value;
             const intel = document.getElementById('global-intel').value;
             if(!loc || !intel) return;
-            await postToDiscord(`📡 COMMAND OVERRIDE: ${loc.toUpperCase()}`, `OBSERVATION: ${intel}`);
+            await postToDiscord(`📡 COMMAND OVERRIDE: ${loc}`, intel);
             closeGlobalReport();
         }
 
-        async function postToDiscord(title, msg) {
-            try { await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ embeds: [{ title, description: msg, color: 15548997, timestamp: new Date() }] }) }); alert("TRANSMITTED."); }
-            catch (e) { alert("ERROR."); }
-        }
-
-        function shareSite() {
-            const text = "Access JSI Sovereign Intelligence. Sector Code: אחד";
-            if (navigator.share) { navigator.share({ title: 'JSI Tactical', text: text, url: window.location.href }); } else { alert("Link copied."); }
-        }
-
-        function clearAllPins() { markersLayer.clearLayers(); }
+        function shareSite() { if (navigator.share) navigator.share({ title: 'JSI Tactical', text: 'Sector: אחד', url: window.location.href }); }
     </script>
 </body>
 </html>
