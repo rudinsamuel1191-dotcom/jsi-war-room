@@ -16,37 +16,38 @@
         .hebrew-text { font-size: 34px; font-weight: bold; margin-bottom: 35px; letter-spacing: 2px; }
         .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 130px; text-align: center; outline: none; font-weight: bold; }
 
-        /* Tactical Briefcase Sidebar */
+        /* INTELLIGENCE BULLETIN (TOP NEWS) */
+        #news-bulletin-wrap { width: 100%; height: 32px; background: #ef4444; color: #000; z-index: 2000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; cursor: pointer; }
+        .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 2001; position: relative; white-space: nowrap; border-right: 1px solid white; }
+        .news-ticker-move { white-space: nowrap; animation: ticker-news 80s linear infinite; display: flex; align-items: center; }
+        .news-item { margin-right: 40px; text-decoration: none; color: inherit; }
+        .news-item:hover { text-decoration: underline; }
+        @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* Sidebar & Modals */
         #briefcase-sidebar { position: fixed; right: -320px; top: 0; width: 320px; height: 100vh; background: #050505; border-left: 2px solid #ef4444; z-index: 9600; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 25px; box-shadow: -15px 0 40px rgba(0,0,0,0.9); }
         #briefcase-sidebar.open { right: 0; }
         .briefcase-item { background: #111; padding: 15px; border-radius: 6px; border: 1px solid #222; border-left: 4px solid #ef4444; margin-bottom: 12px; }
         
-        /* HUD & Menu */
-        #hud-top { position: absolute; top: 0; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
-        .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; }
-        #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
-        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-align: center; line-height: 1.1; }
-
-        /* Market Ticker */
-        #market-ticker-wrap { width: 100%; height: 40px; background: #000; border-top: 1px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 40s linear infinite; color: #fff; font-family: monospace; font-size: 13px; letter-spacing: 1px; }
-        .m-up { color: #10b981; font-weight: bold; }
-        .m-down { color: #ef4444; font-weight: bold; }
-        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-        /* Report Modal */
         #report-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 9500; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(10px); }
         .modal-card { background: #0a0a0a; border: 1px solid #333; width: 100%; max-width: 420px; padding: 25px; border-radius: 8px; border-top: 5px solid #ef4444; }
         .modal-select { background: #1a1a1a; border: 1px solid #444; color: white; width: 100%; padding: 14px; margin-top: 8px; border-radius: 6px; outline: none; font-size: 14px; }
 
-        /* Popup Styles */
-        .live-link-btn { display: block; background: #1a1a1a; border: 1px solid #333; color: #ef4444; font-size: 10px; padding: 8px; border-radius: 4px; margin-bottom: 6px; text-decoration: none; font-weight: bold; text-align: center; }
-        .live-link-btn:hover { background: #ef4444; color: white; }
-        
+        /* HUD & Action Menu */
+        #hud-top { position: absolute; top: 40px; width: 100%; z-index: 1000; padding: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+        .hud-card { background: rgba(0, 0, 0, 0.9); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 4px; pointer-events: auto; }
+        #action-menu { position: absolute; right: 15px; top: 55%; transform: translateY(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 12px; }
+        .action-btn { background: #ef4444; color: white; padding: 10px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: 0.3s; width: 72px; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; text-align: center; line-height: 1.1; }
+
+        /* MARKET TICKER (BOTTOM) */
+        #ticker-container { width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 1001; }
+
+        /* Markers */
         .tactical-marker { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 34px; height: 34px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
         .pin-percentage { transform: rotate(45deg); font-size: 10px; font-weight: 900; color: white; }
         .pin-label { background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; text-transform: uppercase; }
+        .live-link-btn { display: block; background: #1a1a1a; border: 1px solid #333; color: #ef4444; font-size: 10px; padding: 8px; border-radius: 4px; margin-bottom: 6px; text-decoration: none; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
@@ -55,11 +56,14 @@
         <div class="hebrew-text" dir="rtl">שמע ישראל ה' אלוהינו ה' <input type="text" id="gate-key" class="gate-input" placeholder="____" oninput="checkGate(this)" autocomplete="off"></div>
     </div>
 
+    <div id="news-bulletin-wrap">
+        <div class="bulletin-label">GLOBAL INTEL FEED</div>
+        <div class="news-ticker-move" id="live-news-ticker">UPLINKING TO GLOBAL NEWS HUB... STANDBY...</div>
+    </div>
+
     <div id="briefcase-sidebar">
         <div class="flex justify-between items-center mb-6 border-b border-zinc-800 pb-2">
-            <div>
-                <h2 class="text-red-500 font-black text-xs tracking-[0.2em]">OPERATOR BRIEFCASE</h2>
-            </div>
+            <div><h2 class="text-red-500 font-black text-xs tracking-[0.2em]">OPERATOR BRIEFCASE</h2></div>
             <button onclick="toggleBriefcase()" class="text-zinc-500 text-xl font-bold">×</button>
         </div>
         <div id="briefcase-content" class="space-y-4"></div>
@@ -69,19 +73,18 @@
         <div class="modal-card">
             <h2 class="text-white font-black mb-1 uppercase text-xl">TRANSMIT INTEL</h2>
             <div class="space-y-4 mt-4">
-                <input type="text" id="report-loc" placeholder="Target City / Zip" class="modal-select bg-black">
+                <input type="text" id="report-loc" placeholder="City Name / Sector" class="modal-select bg-black">
                 <select id="report-type" class="modal-select">
-                    <option value="15">📢 ANTI-SEMITIC INCIDENT</option>
-                    <option value="25">⚠️ PROTEST / RIOT</option>
-                    <option value="35">🚩 HOSTILE ACTIVITY</option>
-                    <option value="50">🔥 ARSON / ATTACK</option>
-                    <option value="45">🚀 ROCKET STRIKE</option>
+                    <option value="ANTI-SEMITIC INCIDENT">📢 ANTI-SEMITIC INCIDENT</option>
+                    <option value="PROTEST / RIOT">⚠️ PROTEST / RIOT</option>
+                    <option value="HOSTILE ACTIVITY">🚩 HOSTILE ACTIVITY</option>
+                    <option value="OTHER THREAT">📡 OTHER TACTICAL THREAT</option>
                 </select>
-                <input type="text" id="report-evidence" placeholder="Paste Link (Optional)" class="modal-select bg-black">
+                <input type="text" id="report-evidence" placeholder="Source Link (Optional)" class="modal-select bg-black">
             </div>
             <div class="flex gap-3 mt-8">
-                <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-4 rounded-lg font-bold text-[11px] uppercase tracking-widest">Abort</button>
-                <button onclick="submitIntel()" class="flex-1 bg-red-600 py-4 rounded-lg font-bold text-[11px] uppercase tracking-widest">Transmit</button>
+                <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-4 rounded-lg font-bold text-[11px] uppercase">Abort</button>
+                <button onclick="submitIntel()" class="flex-1 bg-red-600 py-4 rounded-lg font-bold text-[11px] uppercase">Transmit</button>
             </div>
         </div>
     </div>
@@ -100,28 +103,43 @@
         <div id="action-menu">
             <div class="action-btn" onclick="openReport()"><span>📡</span>REPORT<br>INTEL</div>
             <div class="action-btn" style="background:#1f2937; border-color:#9ca3af;" onclick="toggleBriefcase()"><span>💼</span>BRIEF<br>CASE</div>
-            <div class="action-btn" style="background:#000; border-color:#ef4444;" onclick="alert('FEEDBACK: contact@jsi-intel.com')"><span>💬</span>FEED<br>BACK</div>
+            <div class="action-btn" style="background:#000; border-color:#ef4444;" onclick="window.location.href='mailto:contact@jsi-intel.com'"><span>💬</span>FEED<br>BACK</div>
             <button class="action-btn" style="background:#7c3aed; border-color:#a78bfa;" onclick="shareSite()"><span>🔗</span>SHARE</button>
         </div>
         <div id="map"></div>
     </div>
 
-    <div id="market-ticker-wrap">
-        <div class="ticker-move" id="market-feed">SYNCHRONIZING SECURE FINANCIAL UPLINK... STANDBY...</div>
+    <div id="ticker-container">
+        <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {
+            "symbols": [
+                {"proName": "OANDA:XAUUSD", "title": "GOLD"},
+                {"proName": "OANDA:XAGUSD", "title": "SILVER"},
+                {"proName": "FX_IDC:USDILS", "title": "USD/ILS"},
+                {"proName": "BITSTAMP:BTCUSD", "title": "BTC/USD"},
+                {"proName": "OANDA:WTICOUSD", "title": "CRUDE OIL"},
+                {"proName": "FOREXCOM:SPX500", "title": "S&P 500"},
+                {"proName": "INDEX:DXY", "title": "US DOLLAR INDEX"}
+            ],
+            "colorTheme": "dark", "isTransparent": true, "displayMode": "adaptive", "locale": "en"
+            }
+            </script>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const JERUSALEM = [31.7683, 35.2137];
-        // ENTER YOUR API KEY FROM ALPHAVANTAGE.CO HERE
-        const ALPHA_VANTAGE_KEY = "PASTE_YOUR_KEY_HERE"; 
+        const DISCORD_WEBHOOK_URL = "PASTE_YOUR_WEBHOOK_HERE";
 
         const map = L.map('map', { zoomControl: false, attributionControl: false, noWrap: true }).setView(JERUSALEM, 3);
-        const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
         
-        let reports = [{ name: "JERUSALEM", lat: 31.7683, lng: 35.2137, risk: 96, evidence: '' }];
-        let savedIntel = JSON.parse(localStorage.getItem('jsi_briefcase')) || [];
         let markers = [];
+        let reports = [{ name: "JERUSALEM (HQ)", lat: 31.7683, lng: 35.2137, risk: 99 }];
+        let savedIntel = JSON.parse(localStorage.getItem('jsi_briefcase')) || [];
 
         function checkGate(el) {
             if (el.value.trim() === 'אחד') {
@@ -135,128 +153,75 @@
         function closeReport() { document.getElementById('report-modal').style.display = 'none'; }
         
         function initializeSystem() { 
-            updateHUD(); 
-            updateBriefcaseUI(); 
-            updateMarkets();
+            renderPins();
+            updateBriefcaseUI();
+            fetchLiveNews();
             map.flyTo(JERUSALEM, 5); 
-            setInterval(updateMarkets, 300000); // 5-minute refresh
+            setInterval(fetchLiveNews, 600000);
+            setInterval(() => {
+                document.getElementById('user-count').innerText = (6500 + Math.floor(Math.random() * 200)).toLocaleString();
+            }, 5000);
         }
 
-        async function updateMarkets() {
-            // Symbols mapping for AlphaVantage
-            const commodities = [
-                { name: 'GOLD', symbol: 'GOLD' },
-                { name: 'SILVER', symbol: 'SILVER' },
-                { name: 'CRUDE OIL', symbol: 'WTI' }
-            ];
-            
+        async function fetchLiveNews() {
             try {
-                // If you don't have an API key yet, this uses a high-fidelity placeholder
-                // Once you add the key, we can switch to full dynamic fetching.
-                const fallbackData = [
-                    { name: 'GOLD', price: '2,158.40', chg: '+1.4' },
-                    { name: 'SILVER', price: '24.92', chg: '-0.2' },
-                    { name: 'CRUDE OIL', price: '78.45', chg: '+2.1' },
-                    { name: 'S&P 500', price: '5,123.62', chg: '+0.8' },
-                    { name: 'BTC', price: '68,142', chg: '+4.2' },
-                    { name: 'USD/ILS', price: '3.66', chg: '-0.1' }
-                ];
-
-                const feedHTML = fallbackData.map(m => {
-                    const isUp = m.chg.includes('+');
-                    return `${m.name}: $${m.price} <span class="${isUp ? 'm-up' : 'm-down'}">${isUp ? '▲' : '▼'} ${m.chg}%</span>`;
-                }).join(' ••• ');
-
-                document.getElementById('market-feed').innerHTML = feedHTML + ' ••• ' + feedHTML;
-            } catch (e) {
-                document.getElementById('market-feed').innerText = "CONNECTION DELAYED... RETRYING UPLINK...";
-            }
-        }
-
-        function saveToBriefcase(city, risk) {
-            if (!savedIntel.find(i => i.city === city)) {
-                savedIntel.push({ city, risk, time: new Date().toLocaleDateString() });
-                localStorage.setItem('jsi_briefcase', JSON.stringify(savedIntel));
-                updateBriefcaseUI();
-            }
-        }
-
-        function updateBriefcaseUI() {
-            const container = document.getElementById('briefcase-content');
-            if (savedIntel.length === 0) {
-                container.innerHTML = '<p class="text-[10px] text-zinc-700 text-center mt-10">STORAGE EMPTY</p>';
-                return;
-            }
-            container.innerHTML = savedIntel.map(i => `
-                <div class="briefcase-item">
-                    <div class="flex justify-between font-black text-red-500 text-xs"><span>${i.city}</span><span>${i.risk}%</span></div>
-                    <div class="text-[7px] text-zinc-500 mt-1 uppercase">Logged: ${i.time}</div>
-                </div>
-            `).join('');
-        }
-
-        function submitIntel() {
-            const query = document.getElementById('report-loc').value;
-            const impact = parseInt(document.getElementById('report-type').value);
-            if (!query) return;
-
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-            .then(res => res.json()).then(data => {
-                if (data.length > 0) {
-                    const { lat, lon, display_name } = data[0];
-                    reports.push({ 
-                        name: display_name.split(',')[0].toUpperCase(), 
-                        lat: parseFloat(lat), lng: parseFloat(lon), 
-                        risk: 50 + impact, 
-                        evidence: document.getElementById('report-evidence').value 
-                    });
-                    renderPins();
-                    map.flyTo([lat, lon], 10);
-                    closeReport();
+                // Using a proxy to convert Google News RSS to JSON
+                const rssUrl = encodeURIComponent('https://news.google.com/rss/search?q=world+breaking+news+unrest&hl=en-US&gl=US&ceid=US:en');
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`);
+                const data = await response.json();
+                
+                if(data.items) {
+                    const newsHtml = data.items.slice(0, 10).map(item => 
+                        `<a href="${item.link}" target="_blank" class="news-item">[ BREAKING: ${item.title.toUpperCase()} ]</a>`
+                    ).join(' ••• ');
+                    document.getElementById('live-news-ticker').innerHTML = newsHtml + ' ••• ' + newsHtml;
                 }
-            });
+            } catch (e) {
+                document.getElementById('live-news-ticker').innerText = "ENCRYPTED NEWS FEED TEMPORARILY OFFLINE...";
+            }
+        }
+
+        async function submitIntel() {
+            const city = document.getElementById('report-loc').value;
+            const type = document.getElementById('report-type').value;
+            const evidence = document.getElementById('report-evidence').value;
+            if (!city) return;
+
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`);
+            const data = await res.json();
+            
+            if (data.length > 0) {
+                const { lat, lon, display_name } = data[0];
+                const cleanName = display_name.split(',')[0].toUpperCase();
+                
+                reports.push({ name: cleanName, lat: parseFloat(lat), lng: parseFloat(lon), risk: 75 });
+                renderPins();
+                map.flyTo([lat, lon], 10);
+                
+                // Discord Webhook Dispatch
+                if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
+                    fetch(DISCORD_WEBHOOK_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            embeds: [{
+                                title: `🚨 NEW TACTICAL REPORT: ${cleanName}`,
+                                description: `Type: ${type}\nSource: ${evidence || "N/A"}`,
+                                color: 15548997,
+                                timestamp: new Date()
+                            }] 
+                        })
+                    });
+                }
+                closeReport();
+            }
         }
 
         function renderPins() {
             markers.forEach(m => map.removeLayer(m));
             reports.forEach(r => {
                 const icon = L.divIcon({
-                    html: `<div class="tactical-marker"><div class="pin-blob"><span class="pin-percentage">${Math.floor(r.risk)}%</span></div><div class="pin-label">${r.name}</div></div>`,
+                    html: `<div class="tactical-marker"><div class="pin-blob"><span class="pin-percentage">!</span></div><div class="pin-label">${r.name}</div></div>`,
                     className: 'custom-div-icon', iconSize: [40, 50], iconAnchor: [20, 45]
                 });
-                
-                const googleNews = `https://www.google.com/search?q=${r.name}+news+unrest+last+24+hours&tbm=nws`;
-                const xFeed = `https://twitter.com/search?q=${r.name}%20unrest%20filter%3Averified&src=typed_query&f=live`;
-                const tikTok = `https://www.tiktok.com/search?q=${r.name}%20live%20news`;
-
                 const m = L.marker([r.lat, r.lng], { icon: icon }).addTo(map);
-                m.bindPopup(`
-                    <div style="width:230px; color:#000;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px;">
-                            <b style="font-size:12px;">${r.name} SECTOR</b>
-                            <button onclick="saveToBriefcase('${r.name}', ${Math.floor(r.risk)})" style="background:#000; color:#fff; font-size:8px; padding:3px 8px; border-radius:2px;">SAVE</button>
-                        </div>
-                        <p style="font-size:10px; font-weight:bold; color:#ef4444; margin-bottom:8px;">LIVE INTELLIGENCE UPLINKS:</p>
-                        <a href="${googleNews}" target="_blank" class="live-link-btn">📡 GOOGLE NEWS (LATEST 24H)</a>
-                        <a href="${xFeed}" target="_blank" class="live-link-btn">🐦 X / TWITTER VERIFIED FEED</a>
-                        <a href="${tikTok}" target="_blank" class="live-link-btn">📱 TIKTOK VIDEO INTEL</a>
-                    </div>
-                `);
-                markers.push(m);
-            });
-        }
-
-        function updateHUD() {
-            document.getElementById('user-count').innerText = (6500 + Math.floor(Math.random() * 200)).toLocaleString();
-            renderPins();
-        }
-
-        function shareSite() {
-            const text = `⚠️ JSI TACTICAL ALERT ⚠️\nLive Monitoring active.\n${window.location.href}\nPass: אחד`;
-            if (navigator.share) navigator.share({ text: text }); else alert("Link Copied!");
-        }
-
-        document.getElementById('map-search').addEventListener('keypress', e => { if (e.key === 'Enter') { document.getElementById('report-loc').value = e.target.value; openReport(); } });
-    </script>
-</body>
-</html>
