@@ -2,60 +2,203 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSI | War Room Command</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JSI | Tactical Sovereign Monitor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #05070a; margin: 0; padding: 20px; font-family: monospace; }
-        #map { height: 600px; width: 100%; background: #0b0e14; border: 2px solid #1f2937; border-radius: 12px; }
-        .danger-pin {
-            background-color: #ef4444; border: 2px solid #fff; border-radius: 50% 50% 50% 0;
-            color: white; font-weight: 800; font-size: 10px; display: flex;
-            align-items: center; justify-content: center; transform: rotate(-45deg);
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); animation: pulse 2s infinite;
-        }
-        .pin-text { transform: rotate(45deg); }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
+        body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        #map { position: absolute; top: 35px; bottom: 46px; left: 0; right: 0; z-index: 1; background: #000; cursor: crosshair; }
+
+        /* Access Gate */
+        #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
+        .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
+
+        /* HUD Elements */
+        #news-bulletin-wrap { position: fixed; top: 0; left: 0; width: 100%; height: 35px; background: #ef4444; color: #000; z-index: 5000; display: flex; align-items: center; overflow: hidden; font-weight: 900; font-size: 11px; border-bottom: 1px solid white; }
+        .bulletin-label { background: #000; color: #ef4444; padding: 0 15px; height: 100%; display: flex; align-items: center; z-index: 5001; position: relative; white-space: nowrap; border-right: 1px solid white; }
+        .news-ticker-move { white-space: nowrap; animation: ticker-news 90s linear infinite; display: flex; }
+        .news-item { margin-right: 50px; text-decoration: none; color: inherit; }
+        @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        #action-menu { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 12px; }
+        .action-btn { background: #ef4444; color: white; width: 65px; height: 65px; border-radius: 50%; border: 2px solid white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; text-align: center; line-height: 1; }
+        .day-mode-btn { background: #ffd700 !important; color: #000 !important; border-color: #000 !important; }
+
+        #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
+
+        /* Tactical Pins */
+        .pin-blob { background: #ef4444; border: 2px solid white; border-radius: 50% 50% 50% 0; width: 30px; height: 30px; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; }
+        .pin-label { background: rgba(0,0,0,0.85); color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; margin-top: 5px; font-weight: bold; border: 1px solid #444; white-space: nowrap; text-transform: uppercase; }
+        .intel-link { display: block; background: #eee; color: #000; font-size: 10px; padding: 8px; margin-top: 5px; text-align: center; font-weight: bold; text-decoration: none; border-radius: 3px; border-left: 4px solid #ef4444; }
     </style>
 </head>
 <body>
 
-    <div style="margin-bottom: 20px;">
-        <h1 style="color: #ef4444; margin: 0; text-transform: uppercase; letter-spacing: 2px;">JSI Command Center</h1>
-        <p style="color: #4b5563; font-size: 12px;">// LIVE MONITORING // VERSION 1.0</p>
+    <div id="access-gate">
+        <div style="font-size:24px; font-weight:bold; color:white;">שמע ישראל ה' אלוהינו ה'</div>
+        <input type="text" id="gate-key" class="gate-input" placeholder="____" autocomplete="off">
+        <button onclick="manualUnlock()" style="background:#ef4444; color:white; padding:10px 25px; font-weight:900; border-radius:4px;">ACCESS UPLINK</button>
+    </div>
+
+    <div id="news-bulletin-wrap">
+        <div class="bulletin-label">GLOBAL INTEL</div>
+        <div class="news-ticker-move" id="live-news-ticker">ESTABLISHING CONNECTION...</div>
     </div>
 
     <div id="map"></div>
 
+    <div id="action-menu">
+        <div class="action-btn" onclick="openReport()"><span>📡</span>REPORT</div>
+        <div id="day-night-btn" class="action-btn" style="background:#333;" onclick="toggleMapMode()"><span>🌞</span>DAY</div>
+        <div class="action-btn" style="background:#1f2937;" onclick="alert('Briefcase Empty')"><span>💼</span>CASE</div>
+        <div class="action-btn" style="background:#7c3aed;" onclick="shareSite()"><span>🔗</span>SHARE</div>
+    </div>
+
+    <div id="ticker-container">
+        <div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+        <script src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+        {"symbols": [{"proName": "OANDA:XAUUSD", "title": "GOLD"},{"proName": "FX_IDC:USDILS", "title": "USD/ILS"},{"proName": "BITSTAMP:BTCUSD", "title": "BTC"},{"proName": "OANDA:WTICOUSD", "title": "OIL"}],"colorTheme": "dark","isTransparent": true,"displayMode": "adaptive","locale": "en"}
+        </script></div>
+    </div>
+
+    <div id="report-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#0a0a0a; border:1px solid #333; width:100%; max-width:400px; padding:25px; border-top:5px solid #ef4444;">
+            <h2 class="text-white font-black uppercase" id="modal-title">TRANSMIT INTEL</h2>
+            <p id="coords-display" style="color:#ef4444; font-size:10px; margin-top:5px; font-family:monospace; display:none;"></p>
+            <input type="text" id="report-loc" placeholder="Target Sector (City)" style="width:100%; background:#111; border:1px solid #444; color:white; padding:12px; margin-top:15px; outline:none;">
+            <select id="report-type" style="width:100%; background:#111; border:1px solid #444; color:white; padding:12px; margin-top:10px;">
+                <option>ANTI-SEMITIC INCIDENT</option>
+                <option>PROTEST / RIOT</option>
+                <option>HOSTILE ACTIVITY</option>
+            </select>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeReport()" class="flex-1 bg-zinc-800 py-3 font-bold uppercase text-[10px]">Abort</button>
+                <button onclick="submitIntel()" class="flex-1 bg-red-600 py-3 font-bold uppercase text-[10px]">Transmit</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map focused on the US
-        const map = L.map('map').setView([37.8, -96], 4);
+        const JERUSALEM = [31.7683, 35.2137];
+        const DISCORD_WEBHOOK_URL = "PASTE_YOUR_WEBHOOK_HERE";
 
-        // Dark Theme Map Tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView(JERUSALEM, 3);
+        const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+        const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+        
+        let isDarkMode = true;
+        let tappedCoords = null;
+        darkTiles.addTo(map);
 
-        // Mock Data
-        const locations = [
-            { name: "New York", coords: [40.7128, -74.0060], score: 84 },
-            { name: "California", coords: [36.7783, -119.4179], score: 71 },
-            { name: "Florida", coords: [27.6648, -81.5158], score: 52 }
-        ];
+        function manualUnlock() {
+            if (document.getElementById('gate-key').value.trim() === 'אחד') {
+                document.getElementById('access-gate').style.opacity = '0';
+                setTimeout(() => { 
+                    document.getElementById('access-gate').style.display = 'none'; 
+                    map.invalidateSize();
+                    fetchLiveNews();
+                }, 800);
+            }
+        }
 
-        // Draw the Red Pins
-        locations.forEach(loc => {
-            const icon = L.divIcon({
-                className: 'danger-pin',
-                html: `<span class="pin-text">${loc.score}%</span>`,
-                iconSize: [35, 35]
-            });
-            L.marker(loc.coords, { icon: icon }).addTo(map).bindPopup(`<b>${loc.name}</b><br>Risk: ${loc.score}%`);
+        map.on('click', function(e) {
+            tappedCoords = e.latlng;
+            openReport(true);
         });
+
+        function toggleMapMode() {
+            const btn = document.getElementById('day-night-btn');
+            if (isDarkMode) {
+                map.removeLayer(darkTiles); lightTiles.addTo(map);
+                btn.innerHTML = "<span>🌙</span>NIGHT"; btn.classList.add('day-mode-btn'); isDarkMode = false;
+            } else {
+                map.removeLayer(lightTiles); darkTiles.addTo(map);
+                btn.innerHTML = "<span>🌞</span>DAY"; btn.classList.remove('day-mode-btn'); isDarkMode = true;
+            }
+        }
+
+        async function fetchLiveNews() {
+            try {
+                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://news.google.com/rss/search?q=world+breaking+news&hl=en-US&gl=US&ceid=US:en')}`);
+                const data = await res.json();
+                if(data.items) {
+                    const html = data.items.slice(0, 10).map(i => `<a href="${i.link}" target="_blank" class="news-item">[ INTEL: ${i.title.toUpperCase()} ]</a>`).join(' • ');
+                    document.getElementById('live-news-ticker').innerHTML = html + ' • ' + html;
+                }
+            } catch (e) { document.getElementById('live-news-ticker').innerText = "SIGNAL DELAYED..."; }
+        }
+
+        function openReport(isTap = false) {
+            const modal = document.getElementById('report-modal');
+            const coordDisplay = document.getElementById('coords-display');
+            const cityInput = document.getElementById('report-loc');
+            modal.style.display = 'flex';
+            if(isTap && tappedCoords) {
+                coordDisplay.style.display = 'block';
+                coordDisplay.innerText = `GPS: ${tappedCoords.lat.toFixed(4)}, ${tappedCoords.lng.toFixed(4)}`;
+                cityInput.placeholder = "Label this spot...";
+            } else {
+                coordDisplay.style.display = 'none';
+                tappedCoords = null;
+                cityInput.placeholder = "Target Sector (City)";
+            }
+        }
+
+        function closeReport() { document.getElementById('report-modal').style.display = 'none'; tappedCoords = null; }
+
+        async function submitIntel() {
+            const cityName = document.getElementById('report-loc').value || (tappedCoords ? "MARKED LOCATION" : "");
+            const type = document.getElementById('report-type').value;
+            if(!cityName && !tappedCoords) return;
+
+            let lat, lon, finalName;
+            if (tappedCoords) { lat = tappedCoords.lat; lon = tappedCoords.lng; finalName = cityName.toUpperCase(); } 
+            else {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cityName}`);
+                const data = await res.json();
+                if(data[0]) { lat = parseFloat(data[0].lat); lon = parseFloat(data[0].lon); finalName = cityName.toUpperCase(); } 
+                else { alert("Location not found."); return; }
+            }
+
+            if (DISCORD_WEBHOOK_URL.includes("discord.com")) {
+                fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        embeds: [{
+                            title: `🚨 TACTICAL ALERT: ${finalName}`,
+                            color: 15548997,
+                            fields: [
+                                { name: "Threat", value: type, inline: true },
+                                { name: "GPS", value: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, inline: true },
+                                { name: "Link", value: `[Map View](https://www.google.com/maps?q=${lat},${lon})` }
+                            ],
+                            timestamp: new Date()
+                        }]
+                    })
+                });
+            }
+
+            const icon = L.divIcon({ html: `<div class="pin-blob"><span style="transform:rotate(45deg);font-size:10px;font-weight:900;">!</span></div><div class="pin-label">${finalName}</div>`, className: 'custom-icon' });
+            const marker = L.marker([lat, lon], {icon}).addTo(map);
+            marker.bindPopup(`<div style="width:200px; color:#000;"><b>${finalName}</b><br><a href="https://www.google.com/search?q=${finalName}+news" target="_blank" class="intel-link">NEWS FEED</a><a href="https://twitter.com/search?q=${finalName}+alert&f=live" target="_blank" class="intel-link">X FEED</a></div>`);
+            map.flyTo([lat, lon], 10);
+            closeReport();
+        }
+
+        function shareSite() {
+            const shareTitle = "JSI Tactical Monitor";
+            const shareText = `⚠️ JSI TACTICAL MONITOR | LIVE UPLINK\n\nI’ve developed the JSI Tactical Risk Monitor to provide our community with a real-time, independent intelligence tool. In an era of rapid escalation and misinformation, this platform allows us to track global threats, monitor market volatility, and report localized incidents directly to a central command.\n\nHow to use the System:\n1. Access: Tap the link and enter the gate key: אחד\n2. Monitor: The top red bar streams live global intelligence headlines (tap them to read). The bottom bar tracks Gold, Silver, and the USD/ILS exchange rate.\n3. Report: Use the 📡 REPORT INTEL button to pin a location if you see an anti-semitic incident, protest, or hostile activity.\n4. Briefcase: Use the 💼 BRIEFCASE to save specific sectors for long-term monitoring.\n\nLink: Jewish Safety Index (${window.location.href})\nPassword: אחד`;
+            
+            if (navigator.share) {
+                navigator.share({ title: shareTitle, text: shareText }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(shareText);
+                alert("Tactical message copied to clipboard!");
+            }
+        }
     </script>
 </body>
 </html>
