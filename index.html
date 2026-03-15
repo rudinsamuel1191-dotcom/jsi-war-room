@@ -8,6 +8,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #000; margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        /* Access Gate Layer */
+        #access-gate { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; transition: opacity 0.8s ease; }
+        .gate-input { background: transparent; border: none; border-bottom: 3px solid #ef4444; color: #ef4444; font-size: 34px; width: 150px; text-align: center; outline: none; font-weight: bold; margin: 20px 0; }
+        .gate-btn { background: #ef4444; color: white; padding: 12px 30px; font-weight: 900; border-radius: 4px; letter-spacing: 1px; transition: 0.3s; }
+        .gate-btn:hover { background: white; color: #ef4444; }
+
         #map { position: absolute; top: 60px; bottom: 46px; left: 0; right: 0; z-index: 10; background: #000; cursor: crosshair; }
         
         /* HUD Header */
@@ -19,29 +26,34 @@
         #user-counter { position: fixed; top: 12px; right: 15px; z-index: 6000; background: rgba(0,0,0,0.8); border: 1px solid #ef4444; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 11px; color: #ef4444; font-weight: bold; pointer-events: none; }
         .pulse-dot { display: inline-block; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; margin-right: 5px; animation: pulse 1s infinite; }
 
-        /* Floating Action Buttons */
+        /* Command Buttons */
         #command-center { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 5000; display: flex; flex-direction: column; gap: 15px; }
-        .cmd-btn { width: 55px; height: 55px; background: #ef4444; border: 2px solid white; border-radius: 50%; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); transition: transform 0.2s; }
-        .cmd-btn:active { transform: scale(0.9); }
+        .cmd-btn { width: 55px; height: 55px; background: #ef4444; border: 2px solid white; border-radius: 50%; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; cursor: pointer; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
 
-        /* Modals */
-        #report-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-box { background: #0a0a0a; border: 1px solid #ef4444; width: 100%; max-width: 400px; padding: 25px; border-top: 5px solid #ef4444; }
-
-        /* Pin & UI Components */
+        /* Tactical Pins & Popups */
         .tactical-pin { border: 2px solid white; border-radius: 50% 50% 50% 0; width: 24px; height: 24px; transform: rotate(-45deg); background: #ef4444; box-shadow: 0 0 10px #ef4444; }
         .leaflet-popup-content-wrapper { background: #0a0a0a; color: white; border: 1px solid #ef4444; border-radius: 0; }
         .intel-select { background: #1a1a1a; color: #ef4444; border: 1px solid #ef4444; width: 100%; padding: 10px; margin-top: 10px; font-weight: bold; font-size: 11px; outline: none; }
-        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 10px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; cursor: pointer; border: none; }
+        .intel-btn { background: #ef4444; color: #000; width: 100%; padding: 10px; margin-top: 10px; font-weight: 900; font-size: 10px; text-transform: uppercase; border: none; cursor: pointer; }
         .intel-input { width: 100%; background: #000; border: 1px solid #444; color: white; padding: 10px; font-size: 11px; margin-top: 10px; outline: none; }
 
         #ticker-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 46px; background: #000; border-top: 1px solid #ef4444; z-index: 5000; }
         .news-ticker-move { white-space: nowrap; animation: ticker-news 100s linear infinite; display: flex; }
         @keyframes ticker-news { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Report Modal */
+        #report-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; }
     </style>
 </head>
 <body>
+
+    <div id="access-gate">
+        <div style="font-size:24px; font-weight:bold; color:white; letter-spacing:1px; margin-bottom:10px;">שמע ישראל ה' אלוהינו ה'</div>
+        <div style="font-size:10px; color:#555; text-transform:uppercase;">Credential Required for Uplink</div>
+        <input type="text" id="gate-key" class="gate-input" placeholder="____" autocomplete="off" autofocus>
+        <button onclick="checkAccess()" class="gate-btn">ESTABLISH CONNECTION</button>
+    </div>
 
     <div id="user-counter">
         <span class="pulse-dot"></span>ACTIVE OPS: <span id="count-val">4052</span>
@@ -54,7 +66,7 @@
         </div>
         <div id="news-bulletin-wrap">
             <div style="background:#000; color:#ef4444; padding:0 15px; height:100%; display:flex; align-items:center; border-right:1px solid white; z-index:2;">FLASH</div>
-            <div class="news-ticker-move" id="live-news-ticker">PENDING DATA...</div>
+            <div class="news-ticker-move" id="live-news-ticker">FETCHING INTELLIGENCE STREAMS...</div>
         </div>
     </header>
 
@@ -66,10 +78,10 @@
     </div>
 
     <div id="report-modal">
-        <div class="modal-box">
-            <h2 class="text-white font-black uppercase text-xl mb-4">Transmit Field Intel</h2>
-            <input type="text" id="global-loc" placeholder="Location Name (City/Country)" class="intel-input">
-            <textarea id="global-intel" class="intel-input" placeholder="Describe the threat..." rows="4"></textarea>
+        <div class="bg-[#0a0a0a] border border-[#ef4444] w-full max-w-md p-6 border-t-[5px]">
+            <h2 class="text-white font-black uppercase text-xl mb-4">Manual Threat Entry</h2>
+            <input type="text" id="global-loc" placeholder="Target Sector (City/State)" class="intel-input">
+            <textarea id="global-intel" class="intel-input" placeholder="Describe Field Observations..." rows="4"></textarea>
             <div class="flex gap-2 mt-6">
                 <button onclick="closeGlobalReport()" class="flex-1 bg-zinc-800 text-white font-bold py-3 text-[10px] uppercase">Abort</button>
                 <button onclick="submitGlobalThreat()" class="flex-1 bg-red-600 text-black font-black py-3 text-[10px] uppercase">Transmit</button>
@@ -91,15 +103,25 @@
         const map = L.map('map', { zoomControl: false, attributionControl: false, tap: false }).setView([31.7, 35.2], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
+        function checkAccess() {
+            const key = document.getElementById('gate-key').value.trim();
+            if (key === 'אחד') {
+                document.getElementById('access-gate').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('access-gate').style.display = 'none';
+                    map.invalidateSize();
+                }, 800);
+            }
+        }
+
         setInterval(() => {
             const val = document.getElementById('count-val');
             val.innerText = Math.floor(4000 + Math.random() * 100);
         }, 3000);
 
-        const newsStream = ["IRAN SECTOR: ENRICHMENT SPIKE DETECTED", "IDF MOBILIZING IN NORTHERN DISTRICT", "US CARRIER GROUP ENTERS RED SEA", "CYBER ATTACK MITIGATED ON TEL AVIV GRID"];
+        const newsStream = ["NORTH SECTOR: HEZBOLLAH CELL NEUTRALIZED", "IDF ARMOR MOVING TOWARD RAFAH SECTOR", "US INTELLIGENCE: IRAN PREPARING RETALIATION", "TEL AVIV: CYBER DEFENSES AT 100%"];
         document.getElementById('live-news-ticker').innerHTML = newsStream.map(n => `<span style="margin-right:100px;">[ ${n} ]</span>`).join('').repeat(2);
 
-        // Map Click Drops Pin
         map.on('click', async function(e) {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${e.latlng.lat}&lon=${e.latlng.lng}`);
             const data = await res.json();
@@ -110,7 +132,7 @@
 
             const popupContent = `
                 <div style="min-width:200px; padding:5px;">
-                    <b style="color:#ef4444; text-transform:uppercase; letter-spacing:1px;">${sectorName}</b>
+                    <b style="color:#ef4444; text-transform:uppercase;">${sectorName}</b>
                     <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
                     <select class="intel-select" id="mode-${marker._leaflet_id}" onchange="toggleMenu(${marker._leaflet_id}, '${sectorName}', ${e.latlng.lat}, ${e.latlng.lng})">
                         <option value="">-- SELECT ACTION --</option>
@@ -127,7 +149,7 @@
             const mode = document.getElementById(`mode-${id}`).value;
             const container = document.getElementById(`content-${id}`);
             if (mode === 'news') {
-                container.innerHTML = `<a href="https://www.google.com/search?q=${sector}+breaking+news+today&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS HUB</a>`;
+                container.innerHTML = `<a href="https://www.google.com/search?q=${sector}+breaking+news&tbm=nws" target="_blank" class="intel-btn" style="display:block; text-align:center;">OPEN NEWS HUB</a>`;
             } else if (mode === 'report') {
                 container.innerHTML = `<textarea id="input-${id}" class="intel-input" placeholder="Details..." rows="2"></textarea>
                 <button class="intel-btn" onclick="submitThreat(${id}, '${sector}', ${lat}, ${lon})">TRANSMIT</button>`;
@@ -136,23 +158,19 @@
 
         async function submitThreat(id, sector, lat, lon) {
             const text = document.getElementById(`input-${id}`).value;
-            postToDiscord(`🚨 THREAT: ${sector.toUpperCase()}`, `GPS: ${lat}, ${lon}\nINTEL: ${text}`);
+            postToDiscord(`🚨 FIELD THREAT: ${sector.toUpperCase()}`, `GPS: ${lat}, ${lon}\nINTEL: ${text}`);
             map.closePopup();
         }
 
-        // Global Command Functions
         function openGlobalReport() { document.getElementById('report-modal').style.display = 'flex'; }
         function closeGlobalReport() { document.getElementById('report-modal').style.display = 'none'; }
 
         async function submitGlobalThreat() {
             const loc = document.getElementById('global-loc').value;
             const intel = document.getElementById('global-intel').value;
-            if(!loc || !intel) return alert("All fields required.");
-            
-            await postToDiscord(`📡 MANUAL FIELD REPORT: ${loc.toUpperCase()}`, `OBSERVATION: ${intel}`);
+            if(!loc || !intel) return;
+            await postToDiscord(`📡 COMMAND OVERRIDE REPORT: ${loc.toUpperCase()}`, `OBSERVATION: ${intel}`);
             closeGlobalReport();
-            document.getElementById('global-loc').value = "";
-            document.getElementById('global-intel').value = "";
         }
 
         async function postToDiscord(title, msg) {
@@ -162,20 +180,16 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ embeds: [{ title, description: msg, color: 15548997, timestamp: new Date() }] })
                 });
-                alert("TRANSMISSION SUCCESSFUL.");
-            } catch (e) { alert("CONNECTION ERROR."); }
+                alert("TRANSMISSION LOGGED.");
+            } catch (e) { alert("UPLINK ERROR."); }
         }
 
         function shareSite() {
-            const shareData = {
-                title: 'JSI Sovereign Intelligence',
-                text: 'Access Tactical Overwatch. Sector Code: אחד',
-                url: window.location.href
-            };
+            const text = "Access JSI Sovereign Intelligence. Sector Code: אחד";
             if (navigator.share) {
-                navigator.share(shareData);
+                navigator.share({ title: 'JSI Tactical', text: text, url: window.location.href });
             } else {
-                alert("Site link copied to clipboard.");
+                alert("Intel link copied.");
             }
         }
     </script>
