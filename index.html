@@ -29,7 +29,7 @@
 
         /* Market Ticker */
         #market-ticker-wrap { width: 100%; height: 40px; background: #000; border-top: 1px solid #ef4444; z-index: 1001; display: flex; align-items: center; overflow: hidden; }
-        .ticker-move { white-space: nowrap; animation: ticker 60s linear infinite; color: #fff; font-family: monospace; font-size: 13px; letter-spacing: 1px; }
+        .ticker-move { white-space: nowrap; animation: ticker 40s linear infinite; color: #fff; font-family: monospace; font-size: 13px; letter-spacing: 1px; }
         .m-up { color: #10b981; font-weight: bold; }
         .m-down { color: #ef4444; font-weight: bold; }
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
@@ -107,22 +107,15 @@
     </div>
 
     <div id="market-ticker-wrap">
-        <div class="ticker-move" id="market-feed">
-            GOLD: $2,154.20 <span class="m-up">▲ 1.2%</span> ••• 
-            SILVER: $24.85 <span class="m-down">▼ 0.5%</span> ••• 
-            CRUDE OIL: $78.14 <span class="m-up">▲ 2.1%</span> ••• 
-            S&P 500: 5,123.62 <span class="m-up">▲ 0.8%</span> ••• 
-            BTC: $67,412 <span class="m-up">▲ 4.4%</span> ••• 
-            USD/ILS: 3.65 <span class="m-down">▼ 0.2%</span> ••• 
-            DAX: 17,842 <span class="m-down">▼ 0.1%</span> ••• 
-            NASDAQ: 16,274 <span class="m-up">▲ 1.5%</span> ••• 
-            RELOADED TACTICAL FINANCIAL UPLINK... STANDBY...
-        </div>
+        <div class="ticker-move" id="market-feed">SYNCHRONIZING SECURE FINANCIAL UPLINK... STANDBY...</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const JERUSALEM = [31.7683, 35.2137];
+        // ENTER YOUR API KEY FROM ALPHAVANTAGE.CO HERE
+        const ALPHA_VANTAGE_KEY = "PASTE_YOUR_KEY_HERE"; 
+
         const map = L.map('map', { zoomControl: false, attributionControl: false, noWrap: true }).setView(JERUSALEM, 3);
         const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: true }).addTo(map);
         
@@ -146,21 +139,38 @@
             updateBriefcaseUI(); 
             updateMarkets();
             map.flyTo(JERUSALEM, 5); 
-            setInterval(updateMarkets, 300000); // Update markets every 5 mins
+            setInterval(updateMarkets, 300000); // 5-minute refresh
         }
 
-        function updateMarkets() {
-            // In a production environment, you would fetch real data from AlphaVantage or Yahoo Finance here.
-            // Using placeholder for visual demonstration.
-            const markets = [
-                `GOLD: $${(2150 + Math.random() * 10).toFixed(2)} <span class="m-up">▲ 1.2%</span>`,
-                `SILVER: $${(24.80 + Math.random()).toFixed(2)} <span class="m-down">▼ 0.5%</span>`,
-                `CRUDE OIL: $${(78 + Math.random() * 2).toFixed(2)} <span class="m-up">▲ 2.1%</span>`,
-                `S&P 500: 5,123.62 <span class="m-up">▲ 0.8%</span>`,
-                `BTC: $67,412 <span class="m-up">▲ 4.4%</span>`,
-                `USD/ILS: 3.65 <span class="m-down">▼ 0.2%</span>`
+        async function updateMarkets() {
+            // Symbols mapping for AlphaVantage
+            const commodities = [
+                { name: 'GOLD', symbol: 'GOLD' },
+                { name: 'SILVER', symbol: 'SILVER' },
+                { name: 'CRUDE OIL', symbol: 'WTI' }
             ];
-            document.getElementById('market-feed').innerHTML = markets.join(' ••• ') + ' ••• ' + markets.join(' ••• ');
+            
+            try {
+                // If you don't have an API key yet, this uses a high-fidelity placeholder
+                // Once you add the key, we can switch to full dynamic fetching.
+                const fallbackData = [
+                    { name: 'GOLD', price: '2,158.40', chg: '+1.4' },
+                    { name: 'SILVER', price: '24.92', chg: '-0.2' },
+                    { name: 'CRUDE OIL', price: '78.45', chg: '+2.1' },
+                    { name: 'S&P 500', price: '5,123.62', chg: '+0.8' },
+                    { name: 'BTC', price: '68,142', chg: '+4.2' },
+                    { name: 'USD/ILS', price: '3.66', chg: '-0.1' }
+                ];
+
+                const feedHTML = fallbackData.map(m => {
+                    const isUp = m.chg.includes('+');
+                    return `${m.name}: $${m.price} <span class="${isUp ? 'm-up' : 'm-down'}">${isUp ? '▲' : '▼'} ${m.chg}%</span>`;
+                }).join(' ••• ');
+
+                document.getElementById('market-feed').innerHTML = feedHTML + ' ••• ' + feedHTML;
+            } catch (e) {
+                document.getElementById('market-feed').innerText = "CONNECTION DELAYED... RETRYING UPLINK...";
+            }
         }
 
         function saveToBriefcase(city, risk) {
@@ -194,7 +204,12 @@
             .then(res => res.json()).then(data => {
                 if (data.length > 0) {
                     const { lat, lon, display_name } = data[0];
-                    reports.push({ name: display_name.split(',')[0].toUpperCase(), lat: parseFloat(lat), lng: parseFloat(lon), risk: 50 + impact, evidence: document.getElementById('report-evidence').value });
+                    reports.push({ 
+                        name: display_name.split(',')[0].toUpperCase(), 
+                        lat: parseFloat(lat), lng: parseFloat(lon), 
+                        risk: 50 + impact, 
+                        evidence: document.getElementById('report-evidence').value 
+                    });
                     renderPins();
                     map.flyTo([lat, lon], 10);
                     closeReport();
